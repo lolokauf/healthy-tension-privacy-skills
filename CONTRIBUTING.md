@@ -140,7 +140,7 @@ Every PR must satisfy this checklist (also in the PR template):
 
 ### Maintainer
 
-Lauren Kaufman ([@lkaufm](https://github.com/lkaufm)) is the sole maintainer. Co-maintainers will be added once the library reaches 5+ skills and demonstrates sustained community interest.
+Lauren Kaufman ([@lolokauf](https://github.com/lolokauf)) is the sole maintainer. Co-maintainers will be added once the library reaches 5+ skills and demonstrates sustained community interest.
 
 ### Regulatory Accuracy Policy
 

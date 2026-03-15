@@ -32,7 +32,7 @@ A collection of reusable, tested privacy skills that guide AI coding agents thro
 Clone this repo or download the SKILL.md file for the skill you need:
 
 ```bash
-git clone https://github.com/lkaufm/healthy-tension-privacy-skills.git
+git clone https://github.com/lolokauf/healthy-tension-privacy-skills.git
 ```
 
 ### 2. Load the skill into your agent
