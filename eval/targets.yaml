@@ -1,0 +1,128 @@
+# Evaluation Target Registry
+# Each target is a real open-source codebase that skills are evaluated against.
+# Commit SHAs pin the codebase to a known state so ground truth doesn't drift.
+#
+# Schema:
+#   name:               Short identifier (used in directory names and CLI flags)
+#   url:                Git clone URL
+#   commit:             Pinned commit SHA (ground truth is valid only for this commit)
+#   stack:              Primary tech stack summary
+#   description:        What the project is and why it's a good eval target
+#   tier:               public (in this repo) or private (in maintainer's holdout set)
+#   privacy_sensitivity: medium | high | very-high
+#   pinned_date:        Date the commit was pinned (YYYY-MM-DD)
+
+targets:
+  # ─── Public Tier ────────────────────────────────────────────
+  # Contributors can see these ground truths and run evals locally.
+
+  - name: documenso
+    url: https://github.com/documenso/documenso.git
+    commit: 70fb834a6a5a58df3a6203fc892b30014f8647cc
+    stack: Next.js, Prisma, TypeScript, PostgreSQL
+    description: >
+      Open-source document signing platform (DocuSign alternative). Inherently
+      high-PII: signatures, legal documents, recipient emails, audit trails.
+      Tests whether skills correctly flag special-category data handling.
+    tier: public
+    privacy_sensitivity: high
+    pinned_date: "2026-03-15"
+
+  - name: open-saas
+    url: https://github.com/wasp-lang/open-saas.git
+    commit: c2f4624cf8a34cbebc9e1561be944fc35ed32a35
+    stack: Node.js, React, Prisma, TypeScript
+    description: >
+      SaaS boilerplate with multi-auth (email + 4 OAuth providers), Stripe
+      payments, email sending, S3 file uploads. Represents what many early-stage
+      products actually ship.
+    tier: public
+    privacy_sensitivity: medium
+    pinned_date: "2026-03-15"
+
+  - name: vataxia
+    url: https://github.com/buckyroberts/Vataxia.git
+    commit: 6ae68e8602df3e0544a5ca62ffa847a8a1a83a90
+    stack: Django, Django REST Framework, Python
+    description: >
+      Social network with user profiles, messaging, media uploads. Different
+      ORM and framework from the JS targets — tests skill generalisation
+      beyond the JavaScript ecosystem.
+    tier: public
+    privacy_sensitivity: medium
+    pinned_date: "2026-03-15"
+
+  # ─── Private Tier ───────────────────────────────────────────
+  # Maintainer-only holdout set. Ground truths live in a separate
+  # private repo/directory. Contributors cannot see these.
+
+  - name: boxyhq
+    url: https://github.com/boxyhq/saas-starter-kit.git
+    commit: 2b523f8968e26a1ed80888c3f96d76b47b7d1ec1
+    stack: Next.js, TypeScript, SAML Jackson, Svix
+    description: >
+      Enterprise SaaS starter with SAML SSO, webhooks, RBAC, multi-tenancy.
+      Tests skills against enterprise auth and data isolation patterns.
+    tier: private
+    privacy_sensitivity: high
+    pinned_date: "2026-03-15"
+
+  - name: django-oscar
+    url: https://github.com/django-oscar/django-oscar.git
+    commit: eeb5a7dd4af447f5fa9b08652e9a256bca326a56
+    stack: Django, Python, PostgreSQL
+    description: >
+      Production e-commerce framework with customer accounts, order history,
+      payment processing, shipping. Tests skills on transactional PII and
+      payment data flows.
+    tier: private
+    privacy_sensitivity: high
+    pinned_date: "2026-03-15"
+
+  - name: clinic-mgmt
+    url: https://github.com/dhruvpatel16120/clinic-management-system.git
+    commit: 15ac0bdaa865a43ab9469f4dbec9e53d9428a40d
+    stack: React, Firebase Auth, Firestore, Vite
+    description: >
+      Clinic management with patient records, prescriptions, medical history,
+      appointments. Prescription and health data are GDPR Art. 9 special
+      categories. Firebase is a different storage pattern from SQL ORMs.
+    tier: private
+    privacy_sensitivity: very-high
+    pinned_date: "2026-03-15"
+
+  - name: discourse
+    url: https://github.com/discourse/discourse.git
+    commit: c67683fff67371221c8d88de364134c17083c50e
+    stack: Ruby on Rails, PostgreSQL, Redis, Ember.js
+    description: >
+      Community forum platform with user accounts, posting history, private
+      messages, moderation logs. Tests skills on a mature Ruby/Rails codebase
+      with complex user data lifecycle.
+    tier: private
+    privacy_sensitivity: high
+    pinned_date: "2026-03-15"
+
+  - name: cookiecutter-django
+    url: https://github.com/cookiecutter/cookiecutter-django.git
+    commit: 751dfd0025146587961b4a7c9cedacb9fcff235d
+    stack: Django, Celery, Anymail, AWS S3/GCS/Azure
+    description: >
+      Production-ready Django template with background jobs, email integration,
+      cloud storage, user auth. Tests skills on template/scaffold code with
+      configurable third-party integrations.
+    tier: private
+    privacy_sensitivity: medium
+    pinned_date: "2026-03-15"
+
+  - name: medusa
+    url: https://github.com/medusajs/medusa.git
+    commit: ad4437b298d499d1a51e54decad6de3f5ebd2181
+    stack: Node.js, TypeScript, PostgreSQL, Redis
+    description: >
+      Headless commerce engine with payment processors, order management,
+      customer data, inventory. Tests skills on modular commerce architecture
+      with multiple payment integrations.
+    tier: private
+    privacy_sensitivity: high
+    pinned_date: "2026-03-15"

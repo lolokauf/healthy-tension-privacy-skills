@@ -1,0 +1,4 @@
+# Eval suite results — generated locally, not version-controlled
+# Ground truth and rubrics ARE tracked; only outputs are ignored
+eval/results/*
+!eval/results/.gitkeep
