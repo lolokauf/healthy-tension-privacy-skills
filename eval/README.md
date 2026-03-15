@@ -102,17 +102,20 @@ The `summary.md` file contains the scoring table:
 
 ---
 
-## Expected Cost
+## Resource Usage
 
-Each skill run involves an interactive Claude session (agent explores a codebase) plus a judge session.
+Each skill run involves a Claude session (agent explores a codebase) plus two judge sessions (accuracy + quality).
 
-| Component | Estimated Cost | Notes |
-|-----------|---------------|-------|
-| Skill run (interactive) | ~$2–5 | Depends on codebase size and turns used |
-| Judge run (non-interactive) | ~$0.30–0.50 | Single prompt/response |
-| **Full public suite** (3 targets × 2 skills) | **~$15–35** | 6 skill runs + 6 judge runs |
+| Component | Time | Notes |
+|-----------|------|-------|
+| Skill run | ~4–6 min | Agent explores codebase using Read, Grep, Glob, Bash |
+| Accuracy judge | ~1 min | Scores output against ground truth (Rubric A/B) |
+| Quality judge | ~1 min | Scores output format, specificity, actionability (Rubric C) |
+| Auto-generate ground truth | ~4–6 min | Only for new skills without existing GT |
+| **Existing skill, full public suite** (3 targets × 2 skills) | **~35–50 min** | 6 skill runs + 12 judge runs |
+| **New skill, full public suite** (3 targets × 1 skill) | **~25–35 min** | 3 skill runs + 3 auditor runs + 6 judge runs |
 
-Each invocation is capped at `--max-budget-usd 5.00` as a safety net. The summary includes total actual cost from all invocations.
+**Billing:** If you use Claude Code with a Max/Pro subscription, eval runs are included in your subscription — no additional API cost. If you use an API key, the `--max-budget-usd 5.00` cap applies per invocation.
 
 ---
 
@@ -141,17 +144,16 @@ See `judge-prompt.md` for full calibration tables.
 
 ### Submitting a New Skill
 
+You do **not** need to write ground truth. The eval suite auto-generates it.
+
 1. **Write your skill** following `SKILL-TEMPLATE.md`
-2. **Write ground truth** for each public target using `ground-truth-template.md`. Your skill needs a ground truth file for each of the 3 public targets:
-   - `eval/targets/documenso/ground-truth-<your-skill-type>.md`
-   - `eval/targets/open-saas/ground-truth-<your-skill-type>.md`
-   - `eval/targets/vataxia/ground-truth-<your-skill-type>.md`
-3. **Run the public eval suite:**
+2. **Run the eval suite:**
    ```bash
    ./eval/run-eval.sh --skill <your-skill-name>
    ```
-4. **Include eval results** in your PR description (copy the summary table)
-5. The **maintainer will run the full suite** (public + private holdout) during review
+   This automatically: generates ground truth via an independent auditor, runs your skill against 3 target codebases, and scores both accuracy and quality.
+3. **Include eval results** in your PR description (copy the summary table from `results/<timestamp>/summary.md`)
+4. The **maintainer will review** your scores, spot-check the auto-generated ground truth, and run the private holdout suite
 
 ### Adding a New Eval Target
 
@@ -163,9 +165,46 @@ See `judge-prompt.md` for full calibration tables.
 
 ---
 
+## For Maintainers
+
+### Reviewing a New Skill PR
+
+1. **Check the summary table** — look at both Accuracy and Quality scores
+2. **Spot-check auto-generated ground truth** in `results/<timestamp>/auto-ground-truth/` — did the auditor find the right things?
+3. **Review divergences** — where the skill and auditor disagree, who's right?
+4. **Run the holdout suite:**
+   ```bash
+   ./eval/run-eval.sh --skill <skill-name> --tier all --holdout-path /path/to/eval-holdout
+   ```
+5. **Merge or request changes** based on your judgment
+
+### Promoting Auto-Generated Ground Truth
+
+After a skill is merged, you can promote its auto-generated ground truth to permanent human-reviewed ground truth:
+
+```bash
+# Copy auto-generated GT to permanent location
+cp results/<timestamp>/auto-ground-truth/<target>/ground-truth-<skill>.md \
+   eval/targets/<target>/ground-truth-<skill>.md
+```
+
+Add a header: `<!-- PROMOTED from auto-generated, reviewed by [name] on [date] -->`
+
+This means future runs of the skill will use the promoted (faster, more reliable) ground truth instead of regenerating it.
+
+### Pre-Generating Holdout Ground Truth
+
+```bash
+./eval/generate-ground-truth.sh --skill <skill-name> --tier private --holdout-path /path/to/eval-holdout
+```
+
+Review the output, then promote to `eval-holdout/targets/<target>/`.
+
+---
+
 ## Limitations
 
 - **LLM-as-judge has variance.** Running the same eval twice may produce slightly different scores (typically ±1 per dimension). The consistency test in the validation step measures this.
 - **Ground truth reflects one auditor's judgment.** Privacy assessments are interpretive. The "acceptable alternatives" columns in ground truth docs account for reasonable disagreement.
+- **Auto-generated ground truth is a baseline, not gospel.** The independent auditor may miss subtle issues or flag things the skill correctly handles differently. Always review the auto-generated GT before relying on accuracy scores.
 - **Human review is the final gate.** Scores inform the maintainer's decision but do not replace judgment. A MARGINAL score with good reasoning may be more valuable than a PASS with superficial output.
-- **Cost.** Each full suite run costs real API credits. Use `--dry-run` to validate setup, and `--skill`/`--target` flags to run targeted subsets during development.

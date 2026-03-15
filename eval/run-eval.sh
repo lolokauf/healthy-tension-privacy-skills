@@ -288,11 +288,16 @@ $skill_context"
         "$results_dir/${skill}--${target}--output.md"
 }
 
-# ─── Phase 3: Run Judge ──────────────────────────────────────
+# ─── Phase 3: Run Judges ─────────────────────────────────────
 
 # Determines which ground truth file to use for a skill × target pair.
+# Writes the resolved path to GT_RESOLVED_PATH and type to GT_RESOLVED_TYPE.
+# Uses file-based communication to avoid subshell variable loss.
+GT_RESOLVED_PATH=""
+GT_RESOLVED_TYPE=""
+
 resolve_ground_truth() {
-    local skill="$1" target="$2"
+    local skill="$1" target="$2" results_dir="$3"
     local gt_type gt_file
 
     # Map skill name to ground truth file suffix
@@ -302,6 +307,7 @@ resolve_ground_truth() {
         *)               gt_type="$skill" ;;
     esac
 
+    # Check for human-authored ground truth first
     local tier
     tier=$(target_field "$target" "tier")
 
@@ -311,37 +317,80 @@ resolve_ground_truth() {
         gt_file="$HOLDOUT_PATH/targets/$target/ground-truth-${gt_type}.md"
     fi
 
-    if [[ ! -f "$gt_file" ]]; then
+    if [[ -f "$gt_file" ]]; then
+        GT_RESOLVED_PATH="$gt_file"
+        GT_RESOLVED_TYPE="human"
+        return
+    fi
+
+    # No human GT — auto-generate via auditor
+    echo "  Auto-generating ground truth (no human GT found)..."
+    local auto_gt_dir="$results_dir/auto-ground-truth"
+
+    "$SCRIPT_DIR/generate-ground-truth.sh" \
+        --skill "$skill" \
+        --target "$target" \
+        --tier "$tier" \
+        ${HOLDOUT_PATH:+--holdout-path "$HOLDOUT_PATH"} \
+        --output-dir "$auto_gt_dir" \
+        2>>"$results_dir/errors.log" || true
+
+    gt_file="$auto_gt_dir/$target/ground-truth-${skill}.md"
+
+    if [[ -f "$gt_file" ]]; then
+        GT_RESOLVED_PATH="$gt_file"
+        GT_RESOLVED_TYPE="auto"
+        echo "  NOTE: Auto-generated GT used — review $gt_file before relying on accuracy scores" >> "$results_dir/errors.log"
+    else
+        GT_RESOLVED_PATH=""
+        GT_RESOLVED_TYPE=""
+    fi
+}
+
+# Extracts the Output Format section from a skill's SKILL.md.
+extract_output_format() {
+    local skill="$1"
+    local skill_file="$SKILLS_DIR/$skill/SKILL.md"
+
+    if [[ ! -f "$skill_file" ]]; then
         echo ""
         return
     fi
 
-    echo "$gt_file"
+    # Extract from "## Output Format" to the next "##" heading (or EOF)
+    local output_format
+    output_format=$(sed -n '/^## Output Format/,/^## [^O]/p' "$skill_file" | sed '$d' 2>/dev/null || echo "")
+
+    # If capture missed (last section), try without delimiter
+    if [[ -z "$output_format" ]]; then
+        output_format=$(sed -n '/^## Output Format/,$p' "$skill_file" 2>/dev/null || echo "")
+    fi
+
+    echo "$output_format"
 }
 
-# Runs the judge on a skill output. Writes scores to results dir.
-run_judge() {
+# Runs the accuracy judge (Rubric A/B) on skill output vs. ground truth.
+run_judge_accuracy() {
     local skill="$1" target="$2" results_dir="$3"
     local output_file gt_file judge_json scores_file
 
     output_file="$results_dir/${skill}--${target}--output.md"
-    judge_json="$results_dir/transcripts/${skill}--${target}--judge.json"
-    scores_file="$results_dir/${skill}--${target}--scores.md"
+    judge_json="$results_dir/transcripts/${skill}--${target}--judge-accuracy.json"
+    scores_file="$results_dir/${skill}--${target}--scores-accuracy.md"
 
-    # Check output exists
     if [[ ! -f "$output_file" ]]; then
         echo "ERROR: No output file for $skill × $target" >> "$results_dir/errors.log"
         return 1
     fi
 
-    # Resolve ground truth
-    gt_file=$(resolve_ground_truth "$skill" "$target")
+    # Resolve ground truth (human or auto-generated)
+    resolve_ground_truth "$skill" "$target" "$results_dir"
+    gt_file="$GT_RESOLVED_PATH"
     if [[ -z "$gt_file" ]]; then
-        echo "WARNING: No ground truth for $skill × $target — skipping judge" >> "$results_dir/errors.log"
+        echo "WARNING: No ground truth for $skill × $target — skipping accuracy judge" >> "$results_dir/errors.log"
         return 1
     fi
 
-    # Build judge input: rubric + ground truth + skill output
     local rubric ground_truth skill_output judge_input
     rubric=$(cat "$JUDGE_PROMPT")
     ground_truth=$(cat "$gt_file")
@@ -357,23 +406,73 @@ ${ground_truth}
 
 ${skill_output}"
 
-    # Run judge (non-interactive, no tools, single turn)
-    if ! claude -p \
+    if ! echo "$judge_input" | claude -p \
         --output-format json \
         --max-turns 1 \
         --tools "" \
-        "$judge_input" \
         > "$judge_json" 2>>"$results_dir/errors.log"; then
-        echo "JUDGE_RUN_FAILED for $skill × $target" >> "$results_dir/errors.log"
+        echo "ACCURACY_JUDGE_FAILED for $skill × $target" >> "$results_dir/errors.log"
         return 1
     fi
 
-    # Extract scores from judge response
     local judge_text
     judge_text=$(jq -r '.result // empty' "$judge_json" 2>/dev/null || echo "")
 
     if [[ -z "$judge_text" ]]; then
-        echo "WARNING: Empty judge response for $skill × $target" >> "$results_dir/errors.log"
+        echo "WARNING: Empty accuracy judge response for $skill × $target" >> "$results_dir/errors.log"
+        return 1
+    fi
+
+    echo "$judge_text" > "$scores_file"
+}
+
+# Runs the quality judge (Rubric C) on skill output — no ground truth needed.
+run_judge_quality() {
+    local skill="$1" target="$2" results_dir="$3"
+    local output_file judge_json scores_file
+
+    output_file="$results_dir/${skill}--${target}--output.md"
+    judge_json="$results_dir/transcripts/${skill}--${target}--judge-quality.json"
+    scores_file="$results_dir/${skill}--${target}--scores-quality.md"
+
+    if [[ ! -f "$output_file" ]]; then
+        return 1
+    fi
+
+    # Extract the skill's Output Format section for format compliance checking
+    local output_format_spec
+    output_format_spec=$(extract_output_format "$skill")
+
+    local rubric skill_output judge_input
+    rubric=$(cat "$JUDGE_PROMPT")
+    skill_output=$(cat "$output_file")
+
+    judge_input="${rubric}
+
+Use Rubric C (General Skill Quality) for this evaluation.
+
+## Skill Output Format Specification
+
+${output_format_spec}
+
+## Skill Output Being Evaluated
+
+${skill_output}"
+
+    if ! echo "$judge_input" | claude -p \
+        --output-format json \
+        --max-turns 1 \
+        --tools "" \
+        > "$judge_json" 2>>"$results_dir/errors.log"; then
+        echo "QUALITY_JUDGE_FAILED for $skill × $target" >> "$results_dir/errors.log"
+        return 1
+    fi
+
+    local judge_text
+    judge_text=$(jq -r '.result // empty' "$judge_json" 2>/dev/null || echo "")
+
+    if [[ -z "$judge_text" ]]; then
+        echo "WARNING: Empty quality judge response for $skill × $target" >> "$results_dir/errors.log"
         return 1
     fi
 
@@ -403,38 +502,51 @@ HEADER
     echo "**Duration:** ${minutes}m ${seconds}s" >> "$summary_file"
     echo "" >> "$summary_file"
 
-    # Build scores table
+    # Build scores table (accuracy + quality)
     echo "## Scores" >> "$summary_file"
     echo "" >> "$summary_file"
-    echo "| Skill | Target | D1 | D2 | D3 | D4 | D5 | Total | Verdict |" >> "$summary_file"
-    echo "|-------|--------|----|----|----|----|----|----|---------|" >> "$summary_file"
+    echo "| Skill | Target | GT | D1 | D2 | D3 | D4 | D5 | Accuracy | Quality | Verdict |" >> "$summary_file"
+    echo "|-------|--------|----|----|----|----|----|----|----------|---------|---------|" >> "$summary_file"
 
     local pair_count=0
     local pass_count=0
 
-    for scores_file in "$results_dir"/*--*--scores.md; do
+    # Iterate over accuracy score files (one per pair)
+    for scores_file in "$results_dir"/*--*--scores-accuracy.md; do
         [[ -f "$scores_file" ]] || continue
         pair_count=$((pair_count + 1))
 
-        # Parse skill and target from filename (uses -- as delimiter)
-        # e.g., "pbd-code-review--documenso--scores.md" → skill="pbd-code-review", target="documenso"
+        # Parse skill and target from filename
         local fname
-        fname=$(basename "$scores_file" --scores.md)
+        fname=$(basename -- "$scores_file" | sed 's/--scores-accuracy\.md$//')
         local skill target
         skill="${fname%%--*}"
         target="${fname#*--}"
 
-        # Extract scores via grep (macOS-compatible, no -P flag)
-        local d1 d2 d3 d4 d5 total verdict
+        # Extract accuracy scores (macOS-compatible)
+        local d1 d2 d3 d4 d5 accuracy verdict
         d1=$(grep -oE 'SCORE_DIMENSION_1:[[:space:]]*[0-9]+' "$scores_file" 2>/dev/null | grep -oE '[0-9]+$' || echo "?")
         d2=$(grep -oE 'SCORE_DIMENSION_2:[[:space:]]*[0-9]+' "$scores_file" 2>/dev/null | grep -oE '[0-9]+$' || echo "?")
         d3=$(grep -oE 'SCORE_DIMENSION_3:[[:space:]]*[0-9]+' "$scores_file" 2>/dev/null | grep -oE '[0-9]+$' || echo "?")
         d4=$(grep -oE 'SCORE_DIMENSION_4:[[:space:]]*[0-9]+' "$scores_file" 2>/dev/null | grep -oE '[0-9]+$' || echo "?")
         d5=$(grep -oE 'SCORE_DIMENSION_5:[[:space:]]*[0-9]+' "$scores_file" 2>/dev/null | grep -oE '[0-9]+$' || echo "?")
-        total=$(grep -oE 'AGGREGATE:[[:space:]]*[0-9]+' "$scores_file" 2>/dev/null | grep -oE '[0-9]+$' || echo "?")
+        accuracy=$(grep -E '^AGGREGATE:' "$scores_file" 2>/dev/null | head -1 | grep -oE '[0-9]+$' || echo "?")
         verdict=$(grep -E '^VERDICT:' "$scores_file" 2>/dev/null | sed 's/^VERDICT:[[:space:]]*//' || echo "?")
 
-        echo "| $skill | $target | $d1 | $d2 | $d3 | $d4 | $d5 | $total | $verdict |" >> "$summary_file"
+        # Extract quality score from companion file
+        local quality_file="$results_dir/${skill}--${target}--scores-quality.md"
+        local quality="—"
+        if [[ -f "$quality_file" ]]; then
+            quality=$(grep -oE 'QUALITY_AGGREGATE:[[:space:]]*[0-9]+' "$quality_file" 2>/dev/null | grep -oE '[0-9]+$' || echo "?")
+        fi
+
+        # Look up GT type from recorded types
+        local gt_type="?"
+        if [[ -f "$results_dir/gt-types.txt" ]]; then
+            gt_type=$(grep "^${skill}--${target}:" "$results_dir/gt-types.txt" 2>/dev/null | cut -d: -f2 || echo "?")
+        fi
+
+        echo "| $skill | $target | $gt_type | $d1 | $d2 | $d3 | $d4 | $d5 | $accuracy | $quality | $verdict |" >> "$summary_file"
 
         if [[ "$verdict" == *"PASS"* ]]; then
             pass_count=$((pass_count + 1))
@@ -625,8 +737,12 @@ main() {
 
             # Phase 2: Run skill
             if run_skill "$skill" "$target" "$results_dir"; then
-                # Phase 3: Run judge (only if skill succeeded and ground truth exists)
-                run_judge "$skill" "$target" "$results_dir" || true
+                # Phase 3a: Accuracy judge (Rubric A/B, needs ground truth — human or auto-generated)
+                run_judge_accuracy "$skill" "$target" "$results_dir" || true
+                # Phase 3b: Quality judge (Rubric C, always runs, no GT needed)
+                run_judge_quality "$skill" "$target" "$results_dir" || true
+                # Record GT type for this pair
+                echo "${skill}--${target}:${GT_RESOLVED_TYPE}" >> "$results_dir/gt-types.txt"
             else
                 echo "  FAILED — see errors.log"
             fi

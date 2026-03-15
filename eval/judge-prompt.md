@@ -161,9 +161,81 @@ Is the inventory structured, complete, and useful?
 
 ---
 
+## Rubric C: General Skill Quality (No Ground Truth Required)
+
+Use this rubric to evaluate any skill output based on structural quality, regardless of whether ground truth exists. **Always run Rubric C** — it provides a quality signal independent of accuracy.
+
+The judge receives the skill's **Output Format specification** (from its SKILL.md) under a `## Skill Output Format Specification` heading, and the skill's actual output under a `## Skill Output Being Evaluated` heading.
+
+Score each dimension 1–5. Reference the calibration guidance.
+
+### Dimension 1: Format Compliance
+
+Does the output follow the skill's own Output Format specification?
+
+| Score | Meaning | Calibration |
+|-------|---------|-------------|
+| 1 | Output ignores the specified format entirely | Free-form prose with no tables, headers, or structure from the spec |
+| 2 | Partially follows format; major sections missing | Some tables present but missing >50% of specified columns or sections |
+| 3 | Mostly follows format with notable gaps | Most sections present; 2-3 specified outputs missing or malformed |
+| 4 | Follows format closely; minor deviations | All major outputs present; 1 minor formatting inconsistency |
+| 5 | Exact compliance with specified format | Every table, column, section, and field matches the Output Format spec |
+
+### Dimension 2: Completeness
+
+Did the skill follow its own Process section step by step? Did it produce all artifacts?
+
+| Score | Meaning | Calibration |
+|-------|---------|-------------|
+| 1 | Skipped most steps; output is a fragment | Addressed <30% of the skill's stated process |
+| 2 | Addressed some steps but skipped several | 30-50% of process steps reflected in output |
+| 3 | Covered most steps; 2-3 gaps | All major steps addressed; some artifacts thin or missing |
+| 4 | Nearly complete; minor omissions | All steps addressed; 1 artifact slightly thin |
+| 5 | Every process step reflected in output | All artifacts present with appropriate depth |
+
+### Dimension 3: Specificity
+
+Are findings tied to specific code, or vague generalities?
+
+| Score | Meaning | Calibration |
+|-------|---------|-------------|
+| 1 | Entirely generic; could apply to any codebase | "You should consider encryption" with no code references |
+| 2 | Some code references mixed with generic advice | A few file paths mentioned but most findings lack specifics |
+| 3 | Most findings reference code; some generic | File paths and field names for major findings; minor findings vague |
+| 4 | Nearly all findings cite specific code | File paths, line numbers, field names for all findings; 1-2 minor gaps |
+| 5 | Every finding grounded in specific code evidence | Exact file:line references, field names, config values throughout |
+
+### Dimension 4: Honesty
+
+Does the output acknowledge limitations and uncertainty?
+
+| Score | Meaning | Calibration |
+|-------|---------|-------------|
+| 1 | No limitations mentioned; everything stated as fact | All findings marked HIGH confidence with no caveats |
+| 2 | Minimal acknowledgment of limitations | Brief disclaimer but findings still overly confident |
+| 3 | Some limitations noted; confidence levels present but flat | "What This Skill Cannot Do" referenced; most findings marked same confidence |
+| 4 | Good use of confidence levels; limitations clearly stated | Distinct HIGH/MEDIUM/LOW across findings; human review recommended where appropriate |
+| 5 | Excellent calibration; uncertainty is a useful signal | Confidence varies meaningfully; LOW-confidence items clearly flagged for follow-up; limitations specific and honest |
+
+### Dimension 5: Actionability
+
+Could an engineer act on the findings?
+
+| Score | Meaning | Calibration |
+|-------|---------|-------------|
+| 1 | Findings are observations with no path forward | "PII was found" with no remediation guidance |
+| 2 | Some recommendations but vague or impractical | "Consider encrypting data" without specifying what or how |
+| 3 | Most findings have recommendations; some lack detail | Remediation for major findings; minor findings lack specifics |
+| 4 | Clear, prioritised recommendations for nearly all findings | Fixes ordered by severity; specific code changes suggested; 1-2 vague items |
+| 5 | Every finding has a concrete, prioritised fix | Specific code changes, config updates, or architectural suggestions for every finding; blocking vs. non-blocking clearly marked |
+
+---
+
 ## Output Format
 
-After evaluating, produce your scores in EXACTLY this format. This format is parsed by automated tooling — do not deviate.
+After evaluating, produce your scores in EXACTLY the format below. This format is parsed by automated tooling — do not deviate.
+
+**For Rubric A or B (accuracy evaluation with ground truth):**
 
 ```
 ## Evaluation Scores
@@ -190,6 +262,33 @@ EVIDENCE_5: [1-2 sentence evidence quote or reasoning]
 AGGREGATE: [sum of 5 scores, out of 25]
 VERDICT: [STRONG PASS | PASS | MARGINAL | FAIL]
 VERDICT_REASONING: [1-2 sentence overall assessment]
+```
+
+**For Rubric C (quality evaluation, no ground truth needed):**
+
+```
+## Quality Scores
+
+RUBRIC: C
+TARGET: [target name]
+SKILL: [skill name]
+
+QUALITY_DIMENSION_1: [1-5]
+QUALITY_EVIDENCE_1: [1-2 sentence evidence]
+
+QUALITY_DIMENSION_2: [1-5]
+QUALITY_EVIDENCE_2: [1-2 sentence evidence]
+
+QUALITY_DIMENSION_3: [1-5]
+QUALITY_EVIDENCE_3: [1-2 sentence evidence]
+
+QUALITY_DIMENSION_4: [1-5]
+QUALITY_EVIDENCE_4: [1-2 sentence evidence]
+
+QUALITY_DIMENSION_5: [1-5]
+QUALITY_EVIDENCE_5: [1-2 sentence evidence]
+
+QUALITY_AGGREGATE: [sum of 5 scores, out of 25]
 ```
 
 ### Verdict Thresholds
