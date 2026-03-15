@@ -47,10 +47,10 @@ if [[ -z "$FILTER_SKILL" ]]; then
     exit 1
 fi
 
-if [[ "$TIER" == "private" || "$TIER" == "all" ]] && [[ -z "$HOLDOUT_PATH" ]]; then
-    echo "ERROR: --holdout-path required for --tier private|all"
-    exit 1
-fi
+# Note: --holdout-path is NOT required for generate-ground-truth.sh
+# (unlike run-eval.sh which needs it for GT resolution). The generate script
+# only needs to know which targets to run against (from targets.yaml)
+# and where to write output (--output-dir).
 
 # ─── Prerequisites ────────────────────────────────────────────
 
