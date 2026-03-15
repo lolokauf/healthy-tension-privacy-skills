@@ -45,6 +45,8 @@ Once the proposal is accepted:
 
 ### 4. Review
 
+All PRs require maintainer approval before merging. The `main` branch is protected — no direct pushes.
+
 Maintainers review for:
 - **Privacy accuracy** — are regulatory citations correct and current?
 - **Prompt effectiveness** — does the skill produce useful, structured output when used with an AI agent?
@@ -54,7 +56,34 @@ For skills citing specific legislation, a privacy professional review is require
 
 ### 5. Merge & Release
 
-Once approved, the skill is merged to main and tagged with its version.
+Once approved, the maintainer merges the PR and updates [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## Commit Conventions
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) with the skill name as scope:
+
+```
+feat(data-mapping): initial release v1.0.0
+fix(pbd-code-review): correct GDPR Art. 25 citation
+docs(shared): add PIPL to jurisdiction profiles
+chore: update PR template checklist
+```
+
+**Types:**
+- `feat` — new skill, new section, new supporting file
+- `fix` — correct inaccurate guidance, fix broken references
+- `docs` — update shared resources, README, CONTRIBUTING
+- `chore` — repo maintenance, templates, CI
+
+**Scope:** skill name (`pbd-code-review`, `data-mapping`) or `shared` for cross-skill resources. Omit scope for repo-level changes.
+
+### Change Tracking
+
+Changes are tracked at two levels:
+- **Repo-level:** [CHANGELOG.md](CHANGELOG.md) — updated by the maintainer on merge. Documents new skills, shared resource updates, and cross-cutting changes.
+- **Skill-level:** `## Changelog` section in each SKILL.md — updated by the contributor in the PR. Documents version bumps with date and description.
 
 ---
 
