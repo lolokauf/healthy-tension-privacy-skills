@@ -53,7 +53,7 @@ Supervisory authorities (DPAs) in each member state. EDPB coordinates cross-bord
 
 Applies to for-profit businesses that collect California consumers' personal information AND meet any threshold:
 - Annual gross revenue > $25 million
-- Buy, sell, or share PI of 100,000+ consumers or households annually
+- Buy, sell, or share PI of 100,000+ consumers or households annually (CPRA raised this from 50,000 and removed "devices" from the original CCPA threshold)
 - Derive 50%+ of revenue from selling or sharing PI
 
 **Does not apply to:** Non-profits, government agencies, businesses below all thresholds.
@@ -71,7 +71,7 @@ Applies to for-profit businesses that collect California consumers' personal inf
 
 ### Key Distinctions
 
-- **Sale vs. sharing:** "Sale" = PI exchanged for monetary consideration. "Sharing" = PI disclosed for cross-context behavioural advertising (CPRA addition — closes the "we don't sell data" loophole for ad tech).
+- **Sale vs. sharing:** "Sale" = PI exchanged for monetary or other valuable consideration (§1798.140(ad) — "other valuable consideration" captures data-for-service exchanges, not just cash). "Sharing" = PI disclosed for cross-context behavioural advertising (CPRA addition — closes the "we don't sell data" loophole for ad tech).
 - **Business vs. service provider vs. contractor:** Business = controller equivalent. Service provider = processes PI on behalf of business under contract. Contractor = similar to service provider with additional audit/certification requirements (CPRA).
 - **Sensitive PI:** SSN, financial account info, precise geolocation, racial/ethnic origin, religious beliefs, union membership, mail/email/text contents, genetic/biometric data, health data, sex life/orientation. Requires opt-in or "Limit Use" link.
 
@@ -111,7 +111,7 @@ Broader territorial reach than GDPR in some respects (any data collected in Braz
 
 ### Key Differences from GDPR
 
-- **DPO requirement:** Mandatory for ALL controllers (not just high-risk processing). ANPD may simplify for small businesses.
+- **DPO requirement:** Mandatory for controllers (not just high-risk processing, unlike GDPR). ANPD Resolution CD/ANPD No. 2/2022 exempts small-scale processing agents (*agentes de tratamento de pequeno porte*) under certain conditions.
 - **Legitimate interest:** Requires a documented balancing assessment BEFORE invoking (Art. 10). GDPR recommends but doesn't mandate this format.
 - **No "one-stop-shop":** ANPD is the sole authority. No cross-border coordination mechanism like EDPB.
 - **Data subject rights:** Similar to GDPR (access, correction, deletion, portability, information about sharing) but includes right to information about denying consent and its consequences.
