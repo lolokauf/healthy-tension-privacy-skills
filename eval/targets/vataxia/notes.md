@@ -4,7 +4,7 @@
 
 Vataxia is a Django REST Framework social network API. Features include user accounts, posts, replies, private messages, voting, an internal credits/wallet system, and invitation-based signup. Built with Django 1.11 and DRF 3.6.
 
-## Why This Is a Good Eval Target
+## Why This Eval?
 
 Tests skill generalisation beyond the JavaScript/Prisma ecosystem. Django ORM models have different patterns from Prisma schemas. The codebase has substantial privacy issues typical of older projects:
 

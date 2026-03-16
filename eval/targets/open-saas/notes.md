@@ -4,7 +4,7 @@
 
 Open SaaS is a Wasp-based SaaS boilerplate with integrated payments, file uploads, AI features, and admin dashboard. Built with Wasp (generates React + Node.js + Prisma), TypeScript, and PostgreSQL. Designed as a production-ready starter kit for SaaS products.
 
-## Why This Is a Good Eval Target
+## Why This Eval?
 
 Represents what many early-stage SaaS products actually ship — a boilerplate with real integrations but minimal privacy engineering. Tests whether skills can identify common startup privacy gaps:
 

@@ -109,8 +109,8 @@ Each skill run involves a Claude session (agent explores a codebase) plus two ju
 | Component | Time | Notes |
 |-----------|------|-------|
 | Skill run | ~4–6 min | Agent explores codebase using Read, Grep, Glob, Bash |
-| Accuracy judge | ~1 min | Scores output against ground truth (Rubric A/B) |
-| Quality judge | ~1 min | Scores output format, specificity, actionability (Rubric C) |
+| Accuracy judge | ~1 min | Scores output against ground truth (coverage, precision, assessment accuracy) |
+| Quality judge | ~1 min | Scores output structure, specificity, honesty, actionability |
 | Auto-generate ground truth | ~4–6 min | Only for new skills without existing GT |
 | **Existing skill, full public suite** (3 targets × 2 skills) | **~35–50 min** | 6 skill runs + 12 judge runs |
 | **New skill, full public suite** (3 targets × 1 skill) | **~25–35 min** | 3 skill runs + 3 auditor runs + 6 judge runs |
@@ -132,9 +132,9 @@ Each skill run involves a Claude session (agent explores a codebase) plus two ju
 
 ### Scoring Dimensions
 
-**PbD Code Review:** Finding Coverage, False Positive Rate, Severity Accuracy, Confidence Calibration, Output Quality
+**Accuracy** (any skill): Coverage, Precision, Assessment Accuracy, Confidence Calibration, Output Quality
 
-**Data Mapping:** Field Recall, Field Precision, Category Accuracy, Processor Coverage, Output Quality
+**Quality** (any skill): Format Compliance, Completeness, Specificity, Honesty, Actionability
 
 See `judge-prompt.md` for full calibration tables.
 

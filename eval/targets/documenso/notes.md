@@ -4,7 +4,7 @@
 
 Documenso is an open-source document signing platform (DocuSign alternative). Built with Next.js (Remix), Prisma, TypeScript, and PostgreSQL. Production product with real users, self-hosted and cloud-hosted variants.
 
-## Why This Is a Good Eval Target
+## Why This Eval?
 
 Document signing is inherently high-PII: legal signatures, recipient personal data, uploaded documents that may contain any category of PII. The codebase has:
 

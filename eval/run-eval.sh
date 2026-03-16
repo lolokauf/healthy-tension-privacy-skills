@@ -298,23 +298,19 @@ GT_RESOLVED_TYPE=""
 
 resolve_ground_truth() {
     local skill="$1" target="$2" results_dir="$3"
-    local gt_type gt_file
+    local gt_file
 
-    # Map skill name to ground truth file suffix
-    case "$skill" in
-        pbd-code-review) gt_type="pbd" ;;
-        data-mapping)    gt_type="inventory" ;;
-        *)               gt_type="$skill" ;;
-    esac
+    # Ground truth files use skill name directly: ground-truth-<skill-name>.md
+    # No mapping needed — convention is consistent for all skills.
 
     # Check for human-authored ground truth first
     local tier
     tier=$(target_field "$target" "tier")
 
     if [[ "$tier" == "public" ]]; then
-        gt_file="$SCRIPT_DIR/targets/$target/ground-truth-${gt_type}.md"
+        gt_file="$SCRIPT_DIR/targets/$target/ground-truth-${skill}.md"
     else
-        gt_file="$HOLDOUT_PATH/targets/$target/ground-truth-${gt_type}.md"
+        gt_file="$HOLDOUT_PATH/targets/$target/ground-truth-${skill}.md"
     fi
 
     if [[ -f "$gt_file" ]]; then
@@ -369,7 +365,7 @@ extract_output_format() {
     echo "$output_format"
 }
 
-# Runs the accuracy judge (Rubric A/B) on skill output vs. ground truth.
+# Runs the accuracy judge on skill output vs. ground truth.
 run_judge_accuracy() {
     local skill="$1" target="$2" results_dir="$3"
     local output_file gt_file judge_json scores_file
@@ -426,7 +422,7 @@ ${skill_output}"
     echo "$judge_text" > "$scores_file"
 }
 
-# Runs the quality judge (Rubric C) on skill output — no ground truth needed.
+# Runs the quality judge on skill output — no ground truth needed.
 run_judge_quality() {
     local skill="$1" target="$2" results_dir="$3"
     local output_file judge_json scores_file
@@ -449,7 +445,7 @@ run_judge_quality() {
 
     judge_input="${rubric}
 
-Use Rubric C (General Skill Quality) for this evaluation.
+Use the Quality Rubric for this evaluation (no ground truth comparison — evaluate structural quality only).
 
 ## Skill Output Format Specification
 
@@ -627,16 +623,21 @@ run_dry_run() {
     done
     echo ""
 
-    # Check ground truth availability
+    # Check ground truth availability (direct file check — no auto-generation in dry run)
     echo "Ground truth:"
     while IFS= read -r target; do
         for skill in $skills; do
-            local gt_file
-            gt_file=$(resolve_ground_truth "$skill" "$target")
-            if [[ -n "$gt_file" && -f "$gt_file" ]]; then
+            local tier gt_file
+            tier=$(target_field "$target" "tier")
+            if [[ "$tier" == "public" ]]; then
+                gt_file="$SCRIPT_DIR/targets/$target/ground-truth-${skill}.md"
+            else
+                gt_file="$HOLDOUT_PATH/targets/$target/ground-truth-${skill}.md"
+            fi
+            if [[ -f "$gt_file" ]]; then
                 echo "  $skill × $target: OK ($gt_file)"
             else
-                echo "  $skill × $target: NOT FOUND (will skip judge)"
+                echo "  $skill × $target: NOT FOUND (will auto-generate at runtime)"
             fi
         done
     done <<< "$targets"
@@ -737,9 +738,9 @@ main() {
 
             # Phase 2: Run skill
             if run_skill "$skill" "$target" "$results_dir"; then
-                # Phase 3a: Accuracy judge (Rubric A/B, needs ground truth — human or auto-generated)
+                # Phase 3a: Accuracy judge (needs ground truth — human or auto-generated)
                 run_judge_accuracy "$skill" "$target" "$results_dir" || true
-                # Phase 3b: Quality judge (Rubric C, always runs, no GT needed)
+                # Phase 3b: Quality judge (always runs, no GT needed)
                 run_judge_quality "$skill" "$target" "$results_dir" || true
                 # Record GT type for this pair
                 echo "${skill}--${target}:${GT_RESOLVED_TYPE}" >> "$results_dir/gt-types.txt"
