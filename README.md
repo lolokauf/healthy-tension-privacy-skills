@@ -22,8 +22,8 @@ A collection of reusable, tested privacy skills that guide AI coding agents thro
 
 | Skill | Description | Personas | Jurisdiction | Version | Status |
 |-------|-------------|----------|--------------|---------|--------|
-| [PbD Code Review](skills/pbd-code-review/) | Review code against Cavoukian's 7 Privacy by Design principles. Produces PII manifests, config audits, data flow heatmaps, and a compiled Privacy Review Report. | engineer, privacy-pm, dpo | principle-based, GDPR Art. 25, CCPA §1798.100 | 2.0.0 | Stable |
-| [Data Mapping](skills/data-mapping/) | Map and inventory all personal data in a codebase. Identifies collection points, storage, flows, sharing, and retention. Produces a structured data inventory consumable by other skills. | engineer, privacy-pm, dpo | GDPR Art. 30, CCPA §1798.100(b) | 1.0.0 | Stable |
+| [PbD Code Review](skills/pbd-code-review/) | Review code against Cavoukian's 7 Privacy by Design principles. Produces PII manifests, config audits, data flow heatmaps, and a compiled Privacy Review Report. | engineer, privacy-pm, dpo | principle-based, GDPR Art. 25, CCPA §1798.100 | 2.1.0 | Stable |
+| [Data Mapping](skills/data-mapping/) | Map and inventory all personal data in a codebase. Identifies collection points, storage, flows, sharing, and retention. Produces a structured data inventory consumable by other skills. | engineer, privacy-pm, dpo | GDPR Art. 30, CCPA §1798.100(b) | 1.1.0 | Stable |
 
 ## Quick Start
 
@@ -52,6 +52,12 @@ Review this codebase using the PbD Code Review skill.
 ```
 Map all personal data in this project using the Data Mapping skill.
 ```
+
+## Evaluation
+
+Every skill is evaluated against real open-source codebases using an automated evaluation suite with LLM-as-judge scoring. The suite tests both **accuracy** (does the skill find what matters?) and **quality** (is the output well-structured and actionable?), plus **adversarial resistance** (does the skill resist prompt manipulation?).
+
+Contributors run the public eval suite before submitting PRs. The maintainer runs an additional private holdout suite during review. See [eval/README.md](eval/README.md) for details.
 
 ## Design Principles
 

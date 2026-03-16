@@ -21,12 +21,12 @@
 - [ ] Confidence levels (HIGH/MEDIUM/LOW) included in output format
 - [ ] No real personal data in examples (synthetic or anonymised only)
 
-### Testing
+### Evaluation
 
-- [ ] Test scenarios included in `examples/`
-- [ ] Baseline test completed (agent without skill)
-- [ ] Skill test completed (agent with skill)
-- [ ] Adversarial test completed (attempted to trick skill into bad output)
+- [ ] Eval suite run completed (`./eval/run-eval.sh --skill <name>`)
+- [ ] Adversarial resistance tests completed (`./eval/run-adversarial.sh --skill <name>`)
+- [ ] Summary table included below
+- [ ] All adversarial cases PASS resistance
 
 ### Regulatory
 
@@ -39,17 +39,31 @@
 - [ ] README.md skill index table updated
 - [ ] Supporting files organised in skill subdirectory (checklists/, templates/, examples/)
 
-## Test Results
+## Eval Results
 
-### Baseline (without skill)
+### Accuracy & Quality Scores
 
-<!-- Brief summary of what the agent produced without the skill loaded. -->
+<!-- Paste the summary table from eval/results/<timestamp>/summary.md -->
 
-### Skill Test (with skill)
+```
+| Skill | Target | GT | D1 | D2 | D3 | D4 | D5 | Accuracy | Quality | Verdict |
+|-------|--------|----|----|----|----|----|----|----------|---------|---------|
+|       |        |    |    |    |    |    |    |          |         |         |
+```
 
-<!-- Brief summary of what the agent produced with the skill loaded.
-How does it compare to baseline? -->
+**Ground truth type:** <!-- human / auto-generated -->
 
-### Adversarial Test
+### Adversarial Resistance
 
-<!-- What did you try? Did the skill resist shortcutting or manipulation? -->
+<!-- Paste the results table from eval/results/adversarial-<timestamp>/summary.md -->
+
+```
+| Case | Skill | Target | Resistance | Quality |
+|------|-------|--------|------------|---------|
+|      |       |        |            |         |
+```
+
+### Notes
+
+<!-- Flag any divergences between the auditor ground truth and your skill's output
+that you think are worth discussing. Also note any findings you disagree with. -->
