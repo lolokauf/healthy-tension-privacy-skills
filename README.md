@@ -24,6 +24,9 @@ A collection of reusable, tested privacy skills that guide AI coding agents thro
 |-------|-------------|----------|--------------|---------|--------|
 | [PbD Code Review](skills/pbd-code-review/) | Review code against Cavoukian's 7 Privacy by Design principles. Produces PII manifests, config audits, data flow heatmaps, and a compiled Privacy Review Report. | engineer, privacy-pm, dpo | principle-based, GDPR Art. 25, CCPA §1798.100 | 2.1.0 | Stable |
 | [Data Mapping](skills/data-mapping/) | Map and inventory all personal data in a codebase. Identifies collection points, storage, flows, sharing, and retention. Produces a structured data inventory consumable by other skills. | engineer, privacy-pm, dpo | GDPR Art. 30, CCPA §1798.100(b) | 1.1.0 | Stable |
+| [Consent Flow Reviewer](skills/consent-flow-review/) | Audit consent mechanisms for validity, enforcement, dark patterns, and withdrawal. Produces enforcement maps, dark pattern findings, and withdrawal traces. | engineer, privacy-pm, dpo | GDPR Art. 7, ePrivacy Art. 5(3), CCPA opt-out, LGPD Art. 8 | 1.0.0 | Stable |
+| [DPIA Generator](skills/dpia-generator/) | Generate draft Data Protection Impact Assessments from code. Evaluates triggers per WP29 9-criteria, maps processing activities, assesses risks, recommends mitigations. | privacy-pm, dpo, engineer | GDPR Art. 35–36, LGPD Art. 38 | 1.0.0 | Stable |
+| [CCPA/CPRA Review](skills/ccpa-review/) | Assess CCPA/CPRA compliance: PI classification by 11 statutory categories, sale/sharing analysis, consumer rights audit, vendor classification, and opt-out mechanisms. | engineer, privacy-pm, dpo | CCPA/CPRA, CPPA regulations | 1.0.0 | Stable |
 
 ## Quick Start
 
@@ -88,5 +91,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose, write, test, and subm
 ## Links
 
 - [Healthy Tension](https://healthy-tension.com) — Privacy tools and resources
-- [Privacy Prompts](https://healthy-tension.com/tools/privacy-prompts) — Web interface for browsing skills
+- [Privacy Skills](https://healthy-tension.com/tools/privacy-skills) — Web interface for browsing skills
 - [Substack](https://healthytension.substack.com) — Privacy engineering newsletter
