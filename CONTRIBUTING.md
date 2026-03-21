@@ -43,9 +43,9 @@ Once the proposal is accepted:
 6. Update the skill index table in `README.md`
 7. Open a PR using the pull request template
 
-### 4. Evaluate
+### 4. Evaluate (Optional)
 
-Run the evaluation suite against the public targets before submitting your PR. **You do not need to write ground truth** — the eval suite auto-generates it from an independent auditor session.
+You can optionally run the evaluation suite against the public targets before submitting your PR. This gives you early signal on how your skill performs, but is **not required** — the maintainer runs the authoritative evaluation during review. **You do not need to write ground truth** — the eval suite auto-generates it.
 
 ```bash
 # Run your skill against all 3 public targets
@@ -55,27 +55,23 @@ Run the evaluation suite against the public targets before submitting your PR. *
 ./eval/run-adversarial.sh --skill <your-skill-name>
 ```
 
-This produces:
-- **Accuracy scores** (skill output vs. auto-generated ground truth) — Coverage, Precision, Assessment Accuracy, Confidence Calibration, Output Quality
-- **Quality scores** (structural quality, no ground truth needed) — Format Compliance, Completeness, Specificity, Honesty, Actionability
-- **Adversarial resistance** — 5 manipulation cases (skip, downplay, override, scope-reduction, false-compliance)
-
-Include the summary table from `eval/results/<timestamp>/summary.md` in your PR description.
-
-See [eval/README.md](eval/README.md) for full documentation, prerequisites, and scoring guide.
+If you run the eval, include the summary table from `eval/results/<timestamp>/summary.md` in your PR description. See [eval/README.md](eval/README.md) for prerequisites and scoring guide.
 
 ### 5. Review
 
 All PRs require maintainer approval before merging. The `main` branch is protected — no direct pushes.
 
-Maintainers review for:
+The maintainer runs the **full evaluation suite** (public targets + private holdout targets not visible to contributors) to produce the authoritative scores. This includes:
+- **Accuracy evaluation** — skill output vs. ground truth (Coverage, Precision, Assessment Accuracy, Confidence Calibration, Output Quality)
+- **Quality evaluation** — structural quality independent of ground truth
+- **Adversarial resistance** — 5 manipulation cases must all PASS
+
+The maintainer also reviews for:
 - **Privacy accuracy** — are regulatory citations correct and current?
 - **Prompt effectiveness** — does the skill produce useful, structured output when used with an AI agent?
 - **Format compliance** — does the skill follow the template?
-- **Eval results** — accuracy and quality scores from the evaluation suite (public + private holdout)
-- **Adversarial resistance** — all 5 cases must PASS
 
-The maintainer also runs the **private holdout suite** (additional target codebases not visible to contributors) to verify the skill generalises beyond the public targets. **No PR is merged based solely on automated scores** — human review is the final gate.
+**No PR is merged based solely on automated scores** — human review is the final gate.
 
 For skills citing specific legislation, a privacy professional review is required before merge.
 
@@ -179,13 +175,15 @@ Every PR must satisfy this checklist (also in the PR template):
 - [ ] `description` field is optimised for agent discovery (keywords in first 50 words)
 - [ ] "What This Skill Cannot Do" section is honest and specific
 - [ ] Test scenarios included in `examples/`
-- [ ] Eval suite results included (run `./eval/run-eval.sh --skill <name>`)
-- [ ] Adversarial resistance results included (run `./eval/run-adversarial.sh --skill <name>`)
+- [ ] *(Optional)* Eval suite results included (run `./eval/run-eval.sh --skill <name>`)
+- [ ] *(Optional)* Adversarial resistance results included (run `./eval/run-adversarial.sh --skill <name>`)
 - [ ] Regulatory sources cited with specific articles/sections and verification dates
 - [ ] Jurisdiction notes included (or skill is explicitly principle-based)
 - [ ] SKILL.md is under 2,000 words (detailed content in supporting files)
 - [ ] README.md skill index table updated
 - [ ] No real personal data in examples (use synthetic or anonymised data only)
+
+*Note: The maintainer runs the full evaluation suite (public + private holdout + adversarial) during review. Contributor-provided results are helpful for early feedback but are not the authoritative scores.*
 
 ---
 

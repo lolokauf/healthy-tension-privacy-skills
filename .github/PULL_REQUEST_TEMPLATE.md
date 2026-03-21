@@ -21,12 +21,13 @@
 - [ ] Confidence levels (HIGH/MEDIUM/LOW) included in output format
 - [ ] No real personal data in examples (synthetic or anonymised only)
 
-### Evaluation
+### Evaluation (Optional)
 
-- [ ] Eval suite run completed (`./eval/run-eval.sh --skill <name>`)
-- [ ] Adversarial resistance tests completed (`./eval/run-adversarial.sh --skill <name>`)
-- [ ] Summary table included below
-- [ ] All adversarial cases PASS resistance
+<!-- Running the eval suite before submitting gives you early feedback.
+The maintainer runs the authoritative evaluation during review. -->
+
+- [ ] *(Optional)* Eval suite run completed (`./eval/run-eval.sh --skill <name>`)
+- [ ] *(Optional)* Adversarial resistance tests completed (`./eval/run-adversarial.sh --skill <name>`)
 
 ### Regulatory
 
@@ -39,7 +40,10 @@
 - [ ] README.md skill index table updated
 - [ ] Supporting files organised in skill subdirectory (checklists/, templates/, examples/)
 
-## Eval Results
+## Eval Results (Optional)
+
+<!-- If you ran the eval suite, paste results below.
+The maintainer runs the full suite (public + private holdout + adversarial) during review. -->
 
 ### Accuracy & Quality Scores
 
@@ -50,8 +54,6 @@
 |-------|--------|----|----|----|----|----|----|----------|---------|---------|
 |       |        |    |    |    |    |    |    |          |         |         |
 ```
-
-**Ground truth type:** <!-- human / auto-generated -->
 
 ### Adversarial Resistance
 

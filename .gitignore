@@ -1,4 +1,10 @@
+# macOS
+.DS_Store
+
 # Eval suite results — generated locally, not version-controlled
-# Ground truth and rubrics ARE tracked; only outputs are ignored
 eval/results/*
 !eval/results/.gitkeep
+
+# Ground truth files — maintained privately by the maintainer
+# Rubrics, scripts, targets.yaml, and notes.md ARE tracked
+eval/targets/*/ground-truth-*.md

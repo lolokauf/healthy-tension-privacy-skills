@@ -15,14 +15,13 @@ The eval suite runs each skill against curated target codebases, then scores the
 3. **Judge** each output against ground truth using a structured rubric (LLM-as-judge)
 4. **Aggregate** scores into a summary with per-dimension ratings and a verdict
 
-### Two-Tier Evaluation
+### Ground Truth Is Private
 
-The suite uses a **public/private split**, a standard practice in projects with quality gates (mirrors the ML validation/test set pattern):
+All ground truth (expected findings, severity judgments, must-find items) is **maintained privately by the maintainer** and is not included in this repository. This prevents contributors from tuning skills to match expected findings rather than genuinely analyzing code.
 
-- **Public tier** (in this repo, `eval/targets/`) — 3 target codebases with visible ground truth. Contributors run these locally to self-assess before submitting PRs.
-- **Private holdout tier** (maintained separately by the repo maintainer) — additional target codebases with ground truth that contributors cannot see. The maintainer runs these during PR review.
-
-**Why?** If all ground truth were public, contributors could overfit skills to pass specific test cases without genuinely improving quality. The public tier gives enough signal for self-assessment; the private tier ensures honest evaluation. The target repo URLs are visible in `targets.yaml` — knowing *which* repos are tested doesn't enable gaming because the ground truth (expected findings, severity judgments, must-find items) is what matters.
+- **Target codebases** are listed in `targets.yaml` — knowing *which* repos are tested doesn't enable gaming because the ground truth is what matters.
+- **Contributors** can optionally run the eval suite for early feedback. Without `--holdout-path`, the suite auto-generates ground truth from an independent auditor session. This gives useful signal but is not the authoritative evaluation.
+- **The maintainer** runs the full suite with `--holdout-path` pointing to the private ground truth, producing the authoritative accuracy scores.
 
 ---
 
@@ -65,15 +64,20 @@ claude --version && git --version && yq --version && jq --version
 ./eval/run-eval.sh --dry-run
 ```
 
-### Maintainer: Running the Private Holdout
+### Maintainer: Running with Ground Truth
 
 ```bash
-# Run private tier only
+# Run public targets with private ground truth
+./eval/run-eval.sh --holdout-path /path/to/eval-holdout
+
+# Run private holdout targets only
 ./eval/run-eval.sh --tier private --holdout-path /path/to/eval-holdout
 
-# Run both public and private tiers
+# Run all targets (public + private)
 ./eval/run-eval.sh --tier all --holdout-path /path/to/eval-holdout
 ```
+
+Without `--holdout-path`, the suite auto-generates ground truth from an independent auditor session. This is useful for contributor self-assessment but is not the authoritative evaluation.
 
 ### Reading Results
 
@@ -144,16 +148,17 @@ See `judge-prompt.md` for full calibration tables.
 
 ### Submitting a New Skill
 
-You do **not** need to write ground truth. The eval suite auto-generates it.
+You do **not** need to write ground truth or run the eval suite — the maintainer runs the authoritative evaluation during review.
 
 1. **Write your skill** following `SKILL-TEMPLATE.md`
-2. **Run the eval suite:**
+2. **Submit your PR** using the pull request template
+3. *(Optional)* **Run the eval suite for early feedback:**
    ```bash
    ./eval/run-eval.sh --skill <your-skill-name>
+   ./eval/run-adversarial.sh --skill <your-skill-name>
    ```
-   This automatically: generates ground truth via an independent auditor, runs your skill against 3 target codebases, and scores both accuracy and quality.
-3. **Include eval results** in your PR description (copy the summary table from `results/<timestamp>/summary.md`)
-4. The **maintainer will review** your scores, spot-check the auto-generated ground truth, and run the private holdout suite
+   If you run these, include the summary tables in your PR description. This gives you signal on accuracy, quality, and adversarial resistance before the maintainer reviews.
+4. The **maintainer runs the full suite** (public + private holdout + adversarial) and makes the merge decision based on those results
 
 ### Adding a New Eval Target
 
@@ -169,36 +174,38 @@ You do **not** need to write ground truth. The eval suite auto-generates it.
 
 ### Reviewing a New Skill PR
 
-1. **Check the summary table** — look at both Accuracy and Quality scores
-2. **Spot-check auto-generated ground truth** in `results/<timestamp>/auto-ground-truth/` — did the auditor find the right things?
-3. **Review divergences** — where the skill and auditor disagree, who's right?
-4. **Run the holdout suite:**
+1. **Pull the contributor's branch** locally
+2. **Run the full evaluation suite** with your private ground truth:
    ```bash
    ./eval/run-eval.sh --skill <skill-name> --tier all --holdout-path /path/to/eval-holdout
+   ./eval/run-adversarial.sh --skill <skill-name>
    ```
-5. **Merge or request changes** based on your judgment
+3. **Review scores** — accuracy, quality, and adversarial resistance
+4. **Spot-check auto-generated ground truth** (for new skills without existing GT) in `results/<timestamp>/auto-ground-truth/`
+5. **Review divergences** — where the skill and auditor disagree, who's right?
+6. **Merge or request changes** based on your judgment
 
 ### Promoting Auto-Generated Ground Truth
 
-After a skill is merged, you can promote its auto-generated ground truth to permanent human-reviewed ground truth:
+After a skill is merged, you can promote its auto-generated ground truth to permanent human-reviewed ground truth in your private holdout:
 
 ```bash
-# Copy auto-generated GT to permanent location
+# Copy auto-generated GT to private holdout
 cp results/<timestamp>/auto-ground-truth/<target>/ground-truth-<skill>.md \
-   eval/targets/<target>/ground-truth-<skill>.md
+   /path/to/eval-holdout/targets/<target>/ground-truth-<skill>.md
 ```
 
 Add a header: `<!-- PROMOTED from auto-generated, reviewed by [name] on [date] -->`
 
-This means future runs of the skill will use the promoted (faster, more reliable) ground truth instead of regenerating it.
+This means future runs use the promoted (faster, more reliable) ground truth instead of regenerating it.
 
-### Pre-Generating Holdout Ground Truth
+### Pre-Generating Ground Truth for New Skills
 
 ```bash
-./eval/generate-ground-truth.sh --skill <skill-name> --tier private --holdout-path /path/to/eval-holdout
+./eval/generate-ground-truth.sh --skill <skill-name> --output-dir /path/to/eval-holdout/auto-ground-truth
 ```
 
-Review the output, then promote to `eval-holdout/targets/<target>/`.
+Review the output, then promote to `/path/to/eval-holdout/targets/<target>/`.
 
 ---
 

@@ -300,23 +300,17 @@ resolve_ground_truth() {
     local skill="$1" target="$2" results_dir="$3"
     local gt_file
 
-    # Ground truth files use skill name directly: ground-truth-<skill-name>.md
-    # No mapping needed — convention is consistent for all skills.
+    # Ground truth files are maintained privately — all GT resolves from --holdout-path.
+    # Without --holdout-path, GT is auto-generated (correct for contributor self-evals).
 
-    # Check for human-authored ground truth first
-    local tier
-    tier=$(target_field "$target" "tier")
-
-    if [[ "$tier" == "public" ]]; then
-        gt_file="$SCRIPT_DIR/targets/$target/ground-truth-${skill}.md"
-    else
+    # Check for human-reviewed ground truth in holdout path
+    if [[ -n "$HOLDOUT_PATH" ]]; then
         gt_file="$HOLDOUT_PATH/targets/$target/ground-truth-${skill}.md"
-    fi
-
-    if [[ -f "$gt_file" ]]; then
-        GT_RESOLVED_PATH="$gt_file"
-        GT_RESOLVED_TYPE="human"
-        return
+        if [[ -f "$gt_file" ]]; then
+            GT_RESOLVED_PATH="$gt_file"
+            GT_RESOLVED_TYPE="human"
+            return
+        fi
     fi
 
     # No human GT — auto-generate via auditor
@@ -624,23 +618,23 @@ run_dry_run() {
     echo ""
 
     # Check ground truth availability (direct file check — no auto-generation in dry run)
+    # All GT is maintained privately via --holdout-path. Without it, GT auto-generates at runtime.
     echo "Ground truth:"
-    while IFS= read -r target; do
-        for skill in $skills; do
-            local tier gt_file
-            tier=$(target_field "$target" "tier")
-            if [[ "$tier" == "public" ]]; then
-                gt_file="$SCRIPT_DIR/targets/$target/ground-truth-${skill}.md"
-            else
+    if [[ -z "$HOLDOUT_PATH" ]]; then
+        echo "  No --holdout-path provided — all GT will be auto-generated at runtime"
+    else
+        while IFS= read -r target; do
+            for skill in $skills; do
+                local gt_file
                 gt_file="$HOLDOUT_PATH/targets/$target/ground-truth-${skill}.md"
-            fi
-            if [[ -f "$gt_file" ]]; then
-                echo "  $skill × $target: OK ($gt_file)"
-            else
-                echo "  $skill × $target: NOT FOUND (will auto-generate at runtime)"
-            fi
-        done
-    done <<< "$targets"
+                if [[ -f "$gt_file" ]]; then
+                    echo "  $skill × $target: OK ($gt_file)"
+                else
+                    echo "  $skill × $target: NOT FOUND (will auto-generate at runtime)"
+                fi
+            done
+        done <<< "$targets"
+    fi
     echo ""
 
     # Check judge prompt
