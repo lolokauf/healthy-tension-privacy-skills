@@ -75,6 +75,12 @@ The maintainer also reviews for:
 
 For skills citing specific legislation, a privacy professional review is required before merge.
 
+#### Response Times
+
+- **Triage**: PRs acknowledged within 48 hours (label applied, CI check noted, comment confirming receipt)
+- **Review target**: within 1 week for standard skills. Skills citing specific legislation may take longer for regulatory accuracy review.
+- **What to expect**: the maintainer runs the full eval suite, reviews regulatory citations, and checks library fit. Feedback is provided as PR review comments.
+
 ### 6. Merge & Release
 
 Once approved, the maintainer merges the PR and updates [CHANGELOG.md](CHANGELOG.md).
