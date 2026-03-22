@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "plugins": [
+    {
+      "name": "healthy-tension-privacy",
+      "source": {
+        "type": "github",
+        "repo": "lolokauf/healthy-tension-privacy-skills"
+      }
+    }
+  ]
+}
