@@ -15,7 +15,7 @@ A collection of reusable, tested privacy skills that guide AI coding agents thro
 - Privacy PMs and DPOs using coding agents to build privacy-compliant products
 
 **Works with:**
-- [Claude Code](https://claude.ai/code) — install as a plugin or add SKILL.md to your project (see [Claude Code Setup](#claude-code-setup))
+- [Claude Code](https://claude.ai/code) — add skills globally or per-project (see [Claude Code Setup](#claude-code-setup))
 - Any LLM-assisted workflow — skills are portable markdown, not platform-locked
 
 ## Skills
@@ -40,7 +40,7 @@ git clone https://github.com/lolokauf/healthy-tension-privacy-skills.git
 
 ### 2. Load the skill into your agent
 
-**Claude Code:** See [Claude Code Setup](#claude-code-setup) for plugin install, local loading, and manual options.
+**Claude Code:** See [Claude Code Setup](#claude-code-setup) for global and project-level installation.
 
 **Other AI tools:** Paste the SKILL.md content as a system prompt or initial context. For detailed analysis, also include the supporting files from the skill's directory (checklists, templates).
 
@@ -60,35 +60,39 @@ Map all personal data in this project using the Data Mapping skill.
 
 Three ways to use these skills with [Claude Code](https://claude.ai/code):
 
-### Plugin (recommended)
+### All skills globally (recommended)
 
-Install the plugin to get all skills with namespaced commands:
-
-```bash
-/plugin marketplace add lolokauf/healthy-tension-privacy-skills
-/plugin install healthy-tension-privacy@healthy-tension-privacy-skills
-```
-
-Skills are invoked as `/healthy-tension-privacy:pbd-code-review`, `/healthy-tension-privacy:data-mapping`, etc.
-
-### Local plugin
-
-Load the repo directly during development:
+Symlink the entire `skills/` directory to make all skills available across every project:
 
 ```bash
-claude --plugin-dir /path/to/healthy-tension-privacy-skills
+git clone https://github.com/lolokauf/healthy-tension-privacy-skills.git
+# Symlink each skill to ~/.claude/skills/
+for skill in healthy-tension-privacy-skills/skills/*/; do
+  ln -s "$(cd "$skill" && pwd)" ~/.claude/skills/"$(basename "$skill")"
+done
 ```
 
-### Manual
+Skills are invoked as `/pbd-code-review`, `/data-mapping`, `/ccpa-review`, etc. from any project.
 
-Copy any skill's `SKILL.md` into your project's `.claude/skills/` directory:
+### Single skill globally
+
+Install just the skills you need:
+
+```bash
+mkdir -p ~/.claude/skills/pbd-code-review
+cp -r healthy-tension-privacy-skills/skills/pbd-code-review/* ~/.claude/skills/pbd-code-review/
+```
+
+### Project-level
+
+Add skills to a single project's `.claude/skills/` directory:
 
 ```bash
 mkdir -p .claude/skills/pbd-code-review
-cp healthy-tension-privacy-skills/skills/pbd-code-review/SKILL.md .claude/skills/pbd-code-review/
+cp -r healthy-tension-privacy-skills/skills/pbd-code-review/* .claude/skills/pbd-code-review/
 ```
 
-Skills are invoked without namespacing (e.g., `/pbd-code-review`). For skills with supporting files (checklists, templates), copy the entire skill directory.
+Skills with supporting files (checklists, templates, examples) work best when you copy the entire skill directory, not just `SKILL.md`.
 
 ## Evaluation
 
