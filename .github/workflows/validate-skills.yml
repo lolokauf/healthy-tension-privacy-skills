@@ -1,0 +1,132 @@
+name: Validate Skills
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SKILL.md frontmatter
+        run: |
+          failed=0
+          required_fields="name description jurisdiction personas version"
+
+          for skill_file in skills/*/SKILL.md; do
+            skill_name=$(basename "$(dirname "$skill_file")")
+
+            # Extract frontmatter block (content between first two --- delimiters)
+            frontmatter=$(awk '/^---$/{c++; next} c==1{print} c>=2{exit}' "$skill_file")
+
+            if [ -z "$frontmatter" ]; then
+              echo "::error file=$skill_file::Missing YAML frontmatter"
+              failed=1
+              continue
+            fi
+
+            for field in $required_fields; do
+              if ! echo "$frontmatter" | grep -q "^${field}:"; then
+                echo "::error file=$skill_file::Missing required frontmatter field: $field"
+                failed=1
+              fi
+            done
+          done
+
+          exit $failed
+
+      - name: Check SKILL.md word count
+        run: |
+          failed=0
+          max_words=2500
+
+          for skill_file in skills/*/SKILL.md; do
+            skill_name=$(basename "$(dirname "$skill_file")")
+
+            # Count words in body only (after second --- delimiter)
+            body=$(awk '/^---$/{c++; next} c>=2{print}' "$skill_file")
+            word_count=$(echo "$body" | wc -w | tr -d ' ')
+
+            if [ "$word_count" -gt "$max_words" ]; then
+              echo "::error file=$skill_file::Word count $word_count exceeds hard limit of $max_words"
+              failed=1
+            elif [ "$word_count" -gt 2000 ]; then
+              echo "::warning file=$skill_file::Word count $word_count exceeds 2,000-word target (hard limit: $max_words)"
+            fi
+          done
+
+          exit $failed
+
+      - name: Check required sections
+        run: |
+          failed=0
+          required_sections=(
+            "When to Use"
+            "What This Skill Cannot Do"
+            "Prerequisites"
+            "Process"
+            "Output Format"
+            "Jurisdiction Notes"
+            "References"
+            "Changelog"
+          )
+
+          for skill_file in skills/*/SKILL.md; do
+            skill_name=$(basename "$(dirname "$skill_file")")
+
+            for section in "${required_sections[@]}"; do
+              if ! grep -q "^## .*${section}" "$skill_file"; then
+                echo "::error file=$skill_file::Missing required section: ## $section"
+                failed=1
+              fi
+            done
+          done
+
+          exit $failed
+
+      - name: Check README consistency
+        run: |
+          failed=0
+
+          for skill_dir in skills/*/; do
+            skill_name=$(basename "$skill_dir")
+
+            if ! grep -q "skills/${skill_name}/" README.md; then
+              echo "::error::Skill '$skill_name' exists in skills/ but has no entry in README.md index table"
+              failed=1
+            fi
+          done
+
+          exit $failed
+
+      - name: PII pattern scan (non-blocking)
+        run: |
+          # Scan example files for patterns that look like real PII
+          # Uses ::warning annotations — does NOT fail the job
+
+          for example_file in skills/*/examples/*.md; do
+            [ -f "$example_file" ] || continue
+
+            # SSN pattern (excluding known safe prefixes)
+            if grep -Pn '\d{3}-\d{2}-\d{4}' "$example_file" | grep -Pv '(000-00-|123-45-|555-)' > /dev/null 2>&1; then
+              echo "::warning file=$example_file::Possible SSN pattern detected — verify this is synthetic data"
+            fi
+
+            # Email addresses on non-example domains
+            if grep -Pon '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' "$example_file" | grep -Pvi '(example\.com|test\.com|example\.org|localhost|acme\.com)' > /dev/null 2>&1; then
+              echo "::warning file=$example_file::Non-example email domain detected — verify this is synthetic data"
+            fi
+
+            # Phone numbers with real area codes (excluding 555 prefix)
+            if grep -Pn '\b\d{3}[-.]?\d{3}[-.]?\d{4}\b' "$example_file" | grep -Pv '(555[-.]?\d{3}[-.]?\d{4}|000[-.]?000)' > /dev/null 2>&1; then
+              echo "::warning file=$example_file::Possible real phone number detected — verify this is synthetic data"
+            fi
+          done
+
+          # Always pass — these are warnings only
+          exit 0

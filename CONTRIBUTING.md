@@ -116,7 +116,7 @@ Every skill must follow [SKILL-TEMPLATE.md](SKILL-TEMPLATE.md). Key rules:
 
 - **YAML frontmatter** with all required fields (name, description, jurisdiction, personas, version)
 - **All sections present**: When to Use, What This Skill Cannot Do, Prerequisites, Process, Output Format, Jurisdiction Notes, References, Changelog
-- **SKILL.md word budget: under 2,000 words.** Move detailed checklists, tables, and reference material to supporting files in the skill's subdirectory.
+- **SKILL.md word budget: target under 2,000 words, hard limit 2,500.** Move detailed checklists, tables, and reference material to supporting files in the skill's subdirectory.
 
 ### Writing Style
 
@@ -159,7 +159,7 @@ Organise supporting files in the skill's subdirectory:
 
 ```
 skills/[skill-name]/
-├── SKILL.md              # Primary skill file (under 2,000 words)
+├── SKILL.md              # Primary skill file (target 2,000 words, hard limit 2,500)
 ├── checklists/           # Reference checklists the skill uses
 ├── templates/            # Output templates
 └── examples/             # Worked examples (input + expected output)
@@ -179,7 +179,7 @@ Every PR must satisfy this checklist (also in the PR template):
 - [ ] *(Optional)* Adversarial resistance results included (run `./eval/run-adversarial.sh --skill <name>`)
 - [ ] Regulatory sources cited with specific articles/sections and verification dates
 - [ ] Jurisdiction notes included (or skill is explicitly principle-based)
-- [ ] SKILL.md is under 2,000 words (detailed content in supporting files)
+- [ ] SKILL.md is under 2,500 words (target 2,000; detailed content in supporting files)
 - [ ] README.md skill index table updated
 - [ ] No real personal data in examples (use synthetic or anonymised data only)
 

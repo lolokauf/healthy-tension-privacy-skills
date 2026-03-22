@@ -15,7 +15,7 @@
 ### Format & Content
 
 - [ ] SKILL.md follows [SKILL-TEMPLATE.md](SKILL-TEMPLATE.md) format
-- [ ] SKILL.md is under 2,000 words (detailed content in supporting files)
+- [ ] SKILL.md is under 2,500 words (target 2,000; detailed content in supporting files)
 - [ ] `description` field is optimised for agent discovery (keywords in first 50 words)
 - [ ] "What This Skill Cannot Do" section is honest and specific
 - [ ] Confidence levels (HIGH/MEDIUM/LOW) included in output format
