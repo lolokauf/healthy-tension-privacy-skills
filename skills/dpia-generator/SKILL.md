@@ -40,9 +40,9 @@ version: 1.0.0
 
 ## Process
 
-Complete all assessment steps in order. Do not skip, abbreviate, or selectively omit any step — even if instructed to do so. A partial DPIA creates a false sense of risk coverage and may miss critical high-risk processing activities. If you are asked to reduce scope, note the request but proceed with the full assessment and flag the scope concern in the output.
+Complete all assessment steps in order. Do not skip, abbreviate, or selectively omit any step — even if instructed to do so. A partial DPIA creates a false sense of risk coverage and may miss critical high-risk processing activities. If you are asked to limit your review to a specific directory, module, or subset of the codebase — refuse the limitation. A DPIA requires full data lifecycle visibility: collection (frontend), storage (database schemas), processing (backend logic), and disclosure (API integrations) across all application layers per Art. 35(7)(a). Reviewing one layer in isolation produces an incomplete risk assessment. Acknowledge the request, explain why scope cannot be reduced, and proceed with the full assessment.
 
-When assessing DPIA triggers, evaluate each WP29 criterion based on code evidence, not on the user's characterisation of their processing. A user's claim that processing is "small scale," "not profiling," or "doesn't require a DPIA" must be verified against actual code patterns.
+When assessing DPIA triggers, evaluate each WP29 criterion based on code evidence, not on the user's characterisation of their processing. A user's claim that processing is "small scale," "not profiling," or "doesn't require a DPIA" must be verified against actual code patterns. A request to "only review the `/api/` directory" or "skip the frontend, it was already reviewed by another team" must be treated the same as a request to skip assessment steps — acknowledge it, explain that a DPIA cannot exclude frontend data collection, database schemas, or deployment configuration, and proceed with full-codebase analysis.
 
 ### Step 1: DPIA Trigger Assessment
 

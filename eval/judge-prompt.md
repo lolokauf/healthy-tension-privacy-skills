@@ -21,6 +21,8 @@ Did the skill identify the key findings listed in the ground truth?
 
 This measures **recall** — what proportion of expected findings were discovered. For example, for a data mapping skill, this means PII fields found. For a code review skill, this means privacy issues flagged. For any skill, it means: did it find what a competent privacy professional would find?
 
+**Before scoring D1, you MUST enumerate findings.** List every must-find item from the ground truth and mark each as FOUND, MISSED, or PARTIAL. Then count: `Must-find: X found + Y×0.5 partial = Z/N`. Use the resulting percentage to select the D1 score from the table below. Do not score D1 based on impression — use the count.
+
 | Score | Meaning | Calibration |
 |-------|---------|-------------|
 | 1 | Missed most ground truth findings (>70% missed) | Found <30% of must-find items |
@@ -57,6 +59,8 @@ This measures whether the skill's **qualitative assessments** match reality. For
 | 4 | Nearly all correct; mismatches within acceptable range | Matches ground truth on "must-find" items; 1 arguable mismatch |
 | 5 | Matches ground truth judgment consistently | All ratings defensible; nuanced distinctions correctly made |
 
+_When D1 (Coverage) ≤ 2, the sample of findings available for D3/D4 assessment is small. Note the small sample size in your evidence. Consider capping D3/D4 at D1 + 1 — high assessment accuracy on a handful of findings does not offset missing most of the ground truth._
+
 ### Dimension 4: Confidence Calibration
 
 Does the skill honestly distinguish between what it knows and what it's uncertain about?
@@ -70,6 +74,8 @@ This measures whether **confidence signals are meaningful**. HIGH-confidence fin
 | 3 | Generally appropriate with some miscalibration | Most confident findings are correct; 2-3 calibration errors |
 | 4 | Well-calibrated; HIGH findings are reliable | HIGH-confidence findings match ground truth; LOW items are genuinely ambiguous |
 | 5 | Excellent calibration; confidence is a useful decision signal | Confidence levels add real value; match ground truth "known ambiguities" |
+
+_When D1 (Coverage) ≤ 2, the sample of findings available for D3/D4 assessment is small. Note the small sample size in your evidence. Consider capping D3/D4 at D1 + 1 — high assessment accuracy on a handful of findings does not offset missing most of the ground truth._
 
 ### Dimension 5: Output Quality
 
@@ -170,7 +176,7 @@ TARGET: [target name from ground truth header]
 SKILL: [skill name inferred from output]
 
 SCORE_DIMENSION_1: [1-5]
-EVIDENCE_1: [1-2 sentence evidence quote or reasoning]
+EVIDENCE_1: Must-find: [X/Y found, Z partial]. Nice-to-find: [X/Y]. [1-2 sentence reasoning for score selection]
 
 SCORE_DIMENSION_2: [1-5]
 EVIDENCE_2: [1-2 sentence evidence quote or reasoning]
@@ -224,11 +230,16 @@ QUALITY_AGGREGATE: [sum of 5 scores, out of 25]
 | MARGINAL | 11-15 | Skill output has significant gaps; needs improvement before relying on it |
 | FAIL | 5-10 | Skill output is unreliable or largely inaccurate |
 
+**Coverage gates (override aggregate):**
+- If SCORE_DIMENSION_1 ≤ 2, verdict CANNOT exceed MARGINAL regardless of aggregate score.
+- If SCORE_DIMENSION_1 = 3, verdict CANNOT exceed PASS regardless of aggregate score.
+
 ### Guidance for the Judge
 
 - **Be concise.** Quote key phrases from findings, not full paragraphs.
 - **Check "must-find" items first.** Missing a "must-find" item should heavily penalise Dimension 1 (Coverage).
 - **Credit acceptable alternatives.** The ground truth's "acceptable alternatives" column lists valid alternative interpretations. Don't penalise the skill for choosing a reasonable alternative.
 - **Red herrings.** If the ground truth lists red herrings and the skill correctly avoids them, note this positively in Dimension 2 (Precision). If the skill flags red herrings, penalise Dimension 2.
-- **Partial credit.** A finding that's directionally correct but imprecise (e.g., right issue, wrong severity) should get partial credit across dimensions rather than being scored as a miss.
+- **Partial credit.** A finding that's directionally correct but imprecise counts as PARTIAL for D1 counting (0.5 of a find). It does not excuse imprecision in D2 (Precision) or D3 (Assessment Accuracy) — a finding with wrong severity is still a D3 penalty even if it counts as 0.5 in D1.
 - **Skill-agnostic evaluation.** These dimensions apply to any privacy skill. Whether the skill maps PII fields, reviews code for privacy issues, assesses consent flows, or generates DPIAs — the same question applies: did it find what matters, is what it found real, are its assessments calibrated, and is the output useful?
+- **Default to lower.** When evidence supports two adjacent scores, choose the lower unless you can articulate a specific reason for the higher. False passes are more costly than false marginals for a privacy tool.

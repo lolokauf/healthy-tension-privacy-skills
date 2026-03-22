@@ -4,6 +4,7 @@
 # Eval suite results — generated locally, not version-controlled
 eval/results/*
 !eval/results/.gitkeep
+eval/results
 
 # Ground truth files — maintained privately by the maintainer
 # Rubrics, scripts, targets.yaml, and notes.md ARE tracked

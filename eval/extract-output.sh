@@ -78,11 +78,14 @@ fi
 
 # ─── Fallback: last portion of result ─────────────────────────
 
+fallback_used=0
+
 if [[ -z "$extracted" ]]; then
     echo "WARNING: EVAL_OUTPUT markers not found in transcript, using full result text" >&2
 
     # Use the full result text — it's the agent's complete response
     echo "$all_text" > "$OUTPUT"
+    fallback_used=1
 fi
 
 # ─── Append metadata as comment block ─────────────────────────
@@ -104,3 +107,8 @@ fi
     echo "  extraction: $(if [[ -n "$extracted" ]]; then echo "markers"; else echo "fallback (full result)"; fi)"
     echo "-->"
 } >> "$OUTPUT"
+
+# Exit 2 for fallback extraction so callers can detect and skip judging
+if [[ "$fallback_used" -eq 1 ]]; then
+    exit 2
+fi

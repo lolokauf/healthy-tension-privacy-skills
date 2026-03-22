@@ -12,6 +12,7 @@
 #   --target <name>        Run against only this target (e.g., documenso, open-saas)
 #   --tier <tier>          Target tier: public (default), private, all
 #   --holdout-path <path>  Path to private holdout ground truths (required for --tier private|all)
+#   --results-dir <path>   Write results to this directory instead of eval/results/<timestamp>
 #   --dry-run              Validate setup without invoking Claude
 #   --help                 Show this help message
 
@@ -34,6 +35,7 @@ FILTER_SKILL=""
 FILTER_TARGET=""
 TIER="public"
 HOLDOUT_PATH=""
+RESULTS_DIR=""
 DRY_RUN=false
 
 show_help() {
@@ -47,6 +49,7 @@ while [[ $# -gt 0 ]]; do
         --target)   FILTER_TARGET="$2"; shift 2 ;;
         --tier)     TIER="$2"; shift 2 ;;
         --holdout-path) HOLDOUT_PATH="$2"; shift 2 ;;
+        --results-dir)  RESULTS_DIR="$2"; shift 2 ;;
         --dry-run)  DRY_RUN=true; shift ;;
         --help|-h)  show_help ;;
         *) echo "Unknown option: $1"; show_help ;;
@@ -267,7 +270,7 @@ run_skill() {
 
 $skill_context"
 
-    local prompt="Run the ${skill} skill against this codebase. Follow the skill's Process section step by step. Produce the complete output specified in the Output Format section. Wrap your final compiled output between <!-- EVAL_OUTPUT_START --> and <!-- EVAL_OUTPUT_END --> markers."
+    local prompt="Run the ${skill} skill against this codebase. Follow the skill's Process section step by step. Produce the complete output specified in the Output Format section. Wrap your final compiled output between <!-- EVAL_OUTPUT_START --> and <!-- EVAL_OUTPUT_END --> markers. IMPORTANT: Your FINAL message must contain the complete report between the EVAL_OUTPUT markers. The extraction pipeline only reads your last message — do not produce the report earlier and then summarize."
 
     # Run claude in print mode with full tool access (read-only)
     if ! (cd "$tgt_dir" && claude -p \
@@ -277,15 +280,29 @@ $skill_context"
         --max-turns "$MAX_TURNS" \
         --max-budget-usd "$MAX_BUDGET" \
         "$prompt" \
-    ) > "$transcript_file" 2>>"$results_dir/errors.log"; then
+    ) < /dev/null > "$transcript_file" 2>>"$results_dir/errors.log"; then
         echo "SKILL_RUN_FAILED" >> "$results_dir/errors.log"
         return 1
     fi
 
     # Extract output from transcript
+    local extract_exit=0
     "$SCRIPT_DIR/extract-output.sh" \
         "$transcript_file" \
-        "$results_dir/${skill}--${target}--output.md"
+        "$results_dir/${skill}--${target}--output.md" \
+        || extract_exit=$?
+
+    # Record extraction status (parallels gt-types.txt pattern)
+    if [[ $extract_exit -eq 0 ]]; then
+        echo "${skill}--${target}:markers" >> "$results_dir/extraction-status.txt"
+    elif [[ $extract_exit -eq 2 ]]; then
+        echo "${skill}--${target}:fallback" >> "$results_dir/extraction-status.txt"
+        echo "EXTRACTION_FALLBACK: ${skill} × ${target} — markers not found, used full result text" >> "$results_dir/errors.log"
+        return 2
+    else
+        echo "${skill}--${target}:failed" >> "$results_dir/extraction-status.txt"
+        return 1
+    fi
 }
 
 # ─── Phase 3: Run Judges ─────────────────────────────────────
@@ -320,7 +337,7 @@ resolve_ground_truth() {
     "$SCRIPT_DIR/generate-ground-truth.sh" \
         --skill "$skill" \
         --target "$target" \
-        --tier "$tier" \
+        --tier "$TIER" \
         ${HOLDOUT_PATH:+--holdout-path "$HOLDOUT_PATH"} \
         --output-dir "$auto_gt_dir" \
         2>>"$results_dir/errors.log" || true
@@ -387,6 +404,8 @@ run_judge_accuracy() {
     skill_output=$(cat "$output_file")
 
     judge_input="${rubric}
+
+Use the Accuracy Rubric for this evaluation. Do not produce Quality Scores — those are handled by a separate judge run. Your output should contain only the Evaluation Scores block (SCORE_DIMENSION_1 through VERDICT_REASONING).
 
 ## Ground Truth
 
@@ -536,16 +555,44 @@ HEADER
             gt_type=$(grep "^${skill}--${target}:" "$results_dir/gt-types.txt" 2>/dev/null | cut -d: -f2 || echo "?")
         fi
 
-        echo "| $skill | $target | $gt_type | $d1 | $d2 | $d3 | $d4 | $d5 | $accuracy | $quality | $verdict |" >> "$summary_file"
+        # Flag discrepancy: high quality but low coverage
+        local flag=""
+        if [[ "$d1" =~ ^[0-9]+$ && "$d1" -le 2 && "$quality" =~ ^[0-9]+$ && "$quality" -ge 20 ]]; then
+            flag=" ⚠️"
+        fi
+
+        echo "| $skill | $target | $gt_type | $d1 | $d2 | $d3 | $d4 | $d5 | $accuracy | $quality | ${verdict}${flag} |" >> "$summary_file"
 
         if [[ "$verdict" == *"PASS"* ]]; then
             pass_count=$((pass_count + 1))
         fi
     done
 
+    # Add placeholder rows for fallback extraction pairs (no score files created)
+    if [[ -f "$results_dir/extraction-status.txt" ]]; then
+        while IFS=: read -r pair status; do
+            if [[ "$status" == "fallback" ]]; then
+                local fb_skill="${pair%%--*}"
+                local fb_target="${pair#*--}"
+                echo "| $fb_skill | $fb_target | — | — | — | — | — | — | — | — | EXTRACTION FAILED |" >> "$summary_file"
+            fi
+        done < "$results_dir/extraction-status.txt"
+    fi
+
     echo "" >> "$summary_file"
     echo "**Pairs evaluated:** $pair_count" >> "$summary_file"
     echo "**Passing (PASS or STRONG PASS):** $pass_count / $pair_count" >> "$summary_file"
+    echo "" >> "$summary_file"
+
+    # Extraction stats
+    local markers_count=0 fallback_count=0 failed_count=0
+    if [[ -f "$results_dir/extraction-status.txt" ]]; then
+        markers_count=$(grep -c ':markers$' "$results_dir/extraction-status.txt" || echo 0)
+        fallback_count=$(grep -c ':fallback$' "$results_dir/extraction-status.txt" || echo 0)
+        failed_count=$(grep -c ':failed$' "$results_dir/extraction-status.txt" || echo 0)
+    fi
+    echo "**Extraction:** $markers_count marker-based, $fallback_count fallback (skipped judging), $failed_count failed" >> "$summary_file"
+    echo "_⚠️ = Quality ≥ 20 but Coverage ≤ 2 — skill produced polished output that missed most findings_" >> "$summary_file"
     echo "" >> "$summary_file"
 
     # Cost summary from transcripts
@@ -592,13 +639,13 @@ run_dry_run() {
         echo "  ERROR: No targets matched"
         errors=$((errors + 1))
     else
-        while IFS= read -r target; do
+        while IFS= read -r target <&3; do
             local url commit tier
             url=$(target_field "$target" "url")
             commit=$(target_field "$target" "commit")
             tier=$(target_field "$target" "tier")
             echo "  $target ($tier): $url @ ${commit:0:12}..."
-        done <<< "$targets"
+        done 3<<< "$targets"
     fi
     echo ""
 
@@ -623,7 +670,7 @@ run_dry_run() {
     if [[ -z "$HOLDOUT_PATH" ]]; then
         echo "  No --holdout-path provided — all GT will be auto-generated at runtime"
     else
-        while IFS= read -r target; do
+        while IFS= read -r target <&3; do
             for skill in $skills; do
                 local gt_file
                 gt_file="$HOLDOUT_PATH/targets/$target/ground-truth-${skill}.md"
@@ -633,7 +680,7 @@ run_dry_run() {
                     echo "  $skill × $target: NOT FOUND (will auto-generate at runtime)"
                 fi
             done
-        done <<< "$targets"
+        done 3<<< "$targets"
     fi
     echo ""
 
@@ -681,7 +728,7 @@ main() {
 
     # Count pairs for progress display
     local target_count=0 skill_count=0 pair_count=0
-    while IFS= read -r _; do target_count=$((target_count + 1)); done <<< "$targets"
+    while IFS= read -r _ <&3; do target_count=$((target_count + 1)); done 3<<< "$targets"
     for _ in $skills; do skill_count=$((skill_count + 1)); done
     pair_count=$((target_count * skill_count))
 
@@ -692,7 +739,11 @@ main() {
     # Create results directory
     local timestamp results_dir
     timestamp=$(date '+%Y-%m-%d-%H-%M')
-    results_dir="$SCRIPT_DIR/results/$timestamp"
+    if [[ -n "$RESULTS_DIR" ]]; then
+        results_dir="$RESULTS_DIR"
+    else
+        results_dir="$SCRIPT_DIR/results/$timestamp"
+    fi
     mkdir -p "$results_dir/transcripts"
     touch "$results_dir/errors.log"
 
@@ -703,9 +754,9 @@ main() {
 
     echo "Phase 1: Cloning targets..."
     mkdir -p "$CLONE_DIR"
-    while IFS= read -r target; do
+    while IFS= read -r target <&3; do
         clone_target "$target" || echo "CLONE_FAILED: $target" >> "$results_dir/errors.log"
-    done <<< "$targets"
+    done 3<<< "$targets"
     echo ""
 
     # ── Phase 2 & 3: Run skills + judge ──
@@ -713,7 +764,7 @@ main() {
     local current=0
     local elapsed_total=0
 
-    while IFS= read -r target; do
+    while IFS= read -r target <&3; do
         for skill in $skills; do
             current=$((current + 1))
 
@@ -731,22 +782,28 @@ main() {
             pair_start=$(date +%s)
 
             # Phase 2: Run skill
-            if run_skill "$skill" "$target" "$results_dir"; then
-                # Phase 3a: Accuracy judge (needs ground truth — human or auto-generated)
-                run_judge_accuracy "$skill" "$target" "$results_dir" || true
-                # Phase 3b: Quality judge (always runs, no GT needed)
-                run_judge_quality "$skill" "$target" "$results_dir" || true
-                # Record GT type for this pair
-                echo "${skill}--${target}:${GT_RESOLVED_TYPE}" >> "$results_dir/gt-types.txt"
-            else
-                echo "  FAILED — see errors.log"
-            fi
+            local skill_exit=0
+            run_skill "$skill" "$target" "$results_dir" || skill_exit=$?
+
+            case $skill_exit in
+                0)  # Success — markers found, run judges
+                    run_judge_accuracy "$skill" "$target" "$results_dir" || true
+                    run_judge_quality "$skill" "$target" "$results_dir" || true
+                    echo "${skill}--${target}:${GT_RESOLVED_TYPE}" >> "$results_dir/gt-types.txt"
+                    ;;
+                2)  # Extraction fallback — skill ran but markers missing
+                    echo "  EXTRACTION FALLBACK — skipping judges"
+                    ;;
+                *)  # Skill run failed
+                    echo "  FAILED — see errors.log"
+                    ;;
+            esac
 
             local pair_end
             pair_end=$(date +%s)
             elapsed_total=$(( elapsed_total + pair_end - pair_start ))
         done
-    done <<< "$targets"
+    done 3<<< "$targets"
 
     echo ""
 

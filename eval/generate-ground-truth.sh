@@ -181,7 +181,7 @@ main() {
     local total
     total=$(echo "$targets" | wc -l | tr -d ' ')
 
-    while IFS= read -r target; do
+    while IFS= read -r target <&3; do
         count=$((count + 1))
         local tgt_dir gt_dir gt_file transcript_file
 
@@ -210,8 +210,8 @@ $auditor_prompt"
             --allowedTools "Read,Grep,Glob,Bash" \
             --output-format json \
             --max-turns "$MAX_TURNS" \
-            "Audit this codebase and produce ground truth findings for the skill focus area described in your instructions. Be thorough — explore schemas, models, routes, configs, and integrations. Wrap your final output between <!-- EVAL_OUTPUT_START --> and <!-- EVAL_OUTPUT_END --> markers." \
-        ) > "$transcript_file" 2>/dev/null; then
+            "Audit this codebase and produce ground truth findings for the skill focus area described in your instructions. Be thorough — explore schemas, models, routes, configs, and integrations. Wrap your final output between <!-- EVAL_OUTPUT_START --> and <!-- EVAL_OUTPUT_END --> markers. IMPORTANT: Your FINAL message must contain the complete report between the EVAL_OUTPUT markers. The extraction pipeline only reads your last message — do not produce the report earlier and then summarize." \
+        ) < /dev/null > "$transcript_file" 2>/dev/null; then
             echo "  FAILED — auditor session error"
             continue
         fi
@@ -230,7 +230,7 @@ $auditor_prompt"
         word_count=$(wc -w < "$gt_file" | tr -d ' ')
         echo "  Done ($word_count words) → $gt_file"
 
-    done <<< "$targets"
+    done 3<<< "$targets"
 
     echo ""
     echo "Auto-generated ground truth: $OUTPUT_DIR/"
