@@ -29,7 +29,7 @@ A mobile health application for chronic disease management with:
 - **Processing description:** Mobile health app processing patient health readings, symptom data, and medication adherence for chronic disease management, with ML-based flare risk prediction surfaced to prescribing clinicians
 - **DPIA required:** Yes
 - **Art. 35(3) mandatory triggers:** 1 of 3 (Art. 35(3)(b))
-- **WP29 criteria met:** 4 of 9
+- **WP29 criteria met:** 5 of 9
 - **Risk level:** HIGH
 - **Risks identified:** 7 (2 HIGH, 4 MEDIUM, 1 LOW)
 - **Art. 36 prior consultation recommended:** No
@@ -112,7 +112,7 @@ Legend: ⚠️ = risk annotation, 🔒 = encrypted, 🌐 = cross-border transfer
 | Finding | Why It Matters |
 |---------|---------------|
 | Art. 35(3)(b) mandatory trigger met independently | Large-scale processing of health data (Art. 9) for 45K patients is a mandatory DPIA trigger regardless of WP29 criteria. |
-| 4/9 WP29 criteria PRESENT (sensitive data, large scale, vulnerable subjects, innovative tech) with 1 BORDERLINE (systematic monitoring) | The trigger assessment shows 4 firmly PRESENT + 1 BORDERLINE (#3 systematic monitoring). Count as 4 unless treating BORDERLINE as PRESENT per the conservative default. The combination of health data, vulnerable patients, and ML predictions creates compounding risk. |
+| 5/9 WP29 criteria PRESENT (evaluation/scoring, sensitive data, large scale, vulnerable subjects, innovative tech) with 1 BORDERLINE (systematic monitoring) | The trigger assessment shows 5 firmly PRESENT (#1, #4, #5, #7, #8) + 1 BORDERLINE (#3 systematic monitoring). The combination of health data, vulnerable patients, ML predictions, and evaluation/scoring creates compounding risk. |
 | Patients are vulnerable data subjects | Patients in a clinical care relationship have limited ability to refuse the app if prescribed by their clinician. This asymmetric power dynamic amplifies the impact of all other risks. |
 | ML model lacks fairness auditing | Flare risk predictions influence clinical attention. Without bias auditing, the model may systematically under-serve certain patient demographics — a harm amplified by the healthcare context. |
 | Art. 36 not recommended | Residual risks can be mitigated to MEDIUM or below through recommended measures. If encryption, retention, and transparency mitigations are not implemented, reassess Art. 36 consultation. |

@@ -57,7 +57,7 @@ Map all personal information fields to the 11 CCPA categories defined in §1798.
 
 For each third-party vendor or external data recipient identified in the codebase, perform a two-phase analysis:
 
-- **Phase 1 — Code pattern classification:** Identify what data the code transmits to the vendor and how. Classify the pattern: Does it transmit PI to a third party? Is the transmission for cross-context behavioural advertising (= sharing per §1798.140(ah))? Is PI disclosed for monetary or other valuable consideration (= sale per §1798.140(ad))? Confidence is HIGH for this phase — code patterns are unambiguous.
+- **Phase 1 — Code pattern classification:** Identify what data the code transmits to the vendor and how. Classify the pattern: Does it transmit PI to a third party? Is the transmission for cross-context behavioral advertising (= sharing per §1798.140(ah))? Is PI disclosed for monetary or other valuable consideration (= sale per §1798.140(ad))? Confidence is HIGH for this phase — code patterns are unambiguous.
 
 - **Phase 2 — Service provider/contractor exception check:** Determine whether the vendor relationship qualifies for the service provider exception (§1798.140(ag)) or contractor exception (§1798.140(j)). This requires a written contract with specific restrictions (processing only for disclosed purposes, no selling/sharing, compliance certification). If contracts are not available for review, note the exception as "requires contract review" with MEDIUM confidence. A vendor with no SP/contractor contract that receives PI is a third party, and the transmission is a sale or sharing.
 

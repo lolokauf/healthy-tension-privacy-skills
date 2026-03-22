@@ -129,9 +129,9 @@ Aggregate findings from Steps 1-6 into the Consent Flow Report format below. Ass
 
 ### Section 1: Consent Mechanism Inventory
 
-| Mechanism | Type | Legal Basis | Granularity | Revocable? | Confidence |
-|-----------|------|-------------|-------------|------------|------------|
-| [name] | [type] | [basis] | [per-purpose/bundled] | [yes/no/partial] | [level] |
+| Mechanism | Type | Legal Basis | Granularity | Revocable? | Art. 4(11) Failures | Confidence |
+|-----------|------|-------------|-------------|------------|---------------------|------------|
+| [name] | [type] | [basis] | [per-purpose/bundled] | [yes/no/partial] | [failures or "None"] | [level] |
 
 ### Section 2: Pre-Consent Violations
 

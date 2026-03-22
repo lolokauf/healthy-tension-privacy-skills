@@ -57,7 +57,7 @@ If using the data-mapping skill's PII Category Taxonomy as input, map categories
 | `biometric` | 5. Biometric information | Yes (if used for identification) |
 | `health` | 3. Protected classifications | Yes |
 | `location` | 7. Geolocation data | Yes (if precise) |
-| `behavioural` | 6. Internet/network activity | No |
+| `behavioral` | 6. Internet/network activity | No |
 | `employment` | 9. Professional/employment | No |
 | `education` | 10. Education information | No |
 | `government_id` | 1. Identifiers | Yes |
