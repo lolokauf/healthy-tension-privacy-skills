@@ -1,0 +1,17 @@
+{
+  "name": "healthy-tension-privacy",
+  "owner": {
+    "name": "Lauren Kaufman"
+  },
+  "plugins": [
+    {
+      "name": "healthy-tension-privacy",
+      "description": "Privacy-by-design skills for AI coding agents",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "Lauren Kaufman"
+      }
+    }
+  ]
+}

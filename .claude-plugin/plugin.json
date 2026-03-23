@@ -4,5 +4,7 @@
   "version": "1.0.0",
   "author": { "name": "Lauren Kaufman" },
   "repository": "https://github.com/lolokauf/healthy-tension-privacy-skills",
-  "homepage": "https://github.com/lolokauf/healthy-tension-privacy-skills"
+  "homepage": "https://github.com/lolokauf/healthy-tension-privacy-skills",
+  "license": "MIT",
+  "keywords": ["privacy", "pbd", "gdpr", "ccpa", "dpia", "consent", "data-mapping", "compliance"]
 }
