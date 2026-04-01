@@ -13,6 +13,7 @@
 #   --tier <tier>          Target tier: public (default), private, all
 #   --holdout-path <path>  Path to private holdout ground truths (required for --tier private|all)
 #   --results-dir <path>   Write results to this directory instead of eval/results/<timestamp>
+#   --skills-dir <path>    Use skills from this directory instead of $REPO_ROOT/skills
 #   --dry-run              Validate setup without invoking Claude
 #   --help                 Show this help message
 
@@ -25,6 +26,13 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGETS_YAML="$SCRIPT_DIR/targets.yaml"
 JUDGE_PROMPT="$SCRIPT_DIR/judge-prompt.md"
 SKILLS_DIR="$REPO_ROOT/skills"
+
+# Judge prompt — maintainer-only file. When absent, skill runs proceed but judging is skipped.
+if [[ -f "$JUDGE_PROMPT" ]]; then
+    JUDGE_AVAILABLE=true
+else
+    JUDGE_AVAILABLE=false
+fi
 CLONE_DIR="/tmp/eval-targets"
 MAX_TURNS=50
 MAX_BUDGET="5.00"
@@ -36,6 +44,7 @@ FILTER_TARGET=""
 TIER="public"
 HOLDOUT_PATH=""
 RESULTS_DIR=""
+SKILLS_DIR_OVERRIDE=""
 DRY_RUN=false
 
 show_help() {
@@ -50,6 +59,7 @@ while [[ $# -gt 0 ]]; do
         --tier)     TIER="$2"; shift 2 ;;
         --holdout-path) HOLDOUT_PATH="$2"; shift 2 ;;
         --results-dir)  RESULTS_DIR="$2"; shift 2 ;;
+        --skills-dir)   SKILLS_DIR_OVERRIDE="$2"; shift 2 ;;
         --dry-run)  DRY_RUN=true; shift ;;
         --help|-h)  show_help ;;
         *) echo "Unknown option: $1"; show_help ;;
@@ -60,6 +70,21 @@ done
 if [[ "$TIER" == "private" || "$TIER" == "all" ]] && [[ -z "$HOLDOUT_PATH" ]]; then
     echo "ERROR: --holdout-path is required when --tier is 'private' or 'all'"
     exit 1
+fi
+
+# Apply --skills-dir override (default: $REPO_ROOT/skills)
+if [[ -n "$SKILLS_DIR_OVERRIDE" ]]; then
+    SKILLS_DIR="$SKILLS_DIR_OVERRIDE"
+    if [[ ! -d "$SKILLS_DIR" ]]; then
+        echo "ERROR: --skills-dir path does not exist: $SKILLS_DIR"
+        exit 1
+    fi
+    if ! ls "$SKILLS_DIR"/*/SKILL.md &>/dev/null; then
+        echo "ERROR: --skills-dir contains no */SKILL.md files: $SKILLS_DIR"
+        exit 1
+    fi
+    echo "Using custom skills directory: $SKILLS_DIR"
+    echo ""
 fi
 
 # ─── Prerequisites Check ──────────────────────────────────────
@@ -378,6 +403,11 @@ extract_output_format() {
 
 # Runs the accuracy judge on skill output vs. ground truth.
 run_judge_accuracy() {
+    if [[ "$JUDGE_AVAILABLE" != true ]]; then
+        echo "  Skipping accuracy judge (judge-prompt.md not available)"
+        return 0
+    fi
+
     local skill="$1" target="$2" results_dir="$3"
     local output_file gt_file judge_json scores_file
 
@@ -437,6 +467,10 @@ ${skill_output}"
 
 # Runs the quality judge on skill output — no ground truth needed.
 run_judge_quality() {
+    if [[ "$JUDGE_AVAILABLE" != true ]]; then
+        return 0
+    fi
+
     local skill="$1" target="$2" results_dir="$3"
     local output_file judge_json scores_file
 
@@ -520,6 +554,12 @@ HEADER
     local pair_count=0
     local pass_count=0
 
+    # Count no-judge pairs for summary
+    local no_judge_count=0
+    if [[ -f "$results_dir/gt-types.txt" ]]; then
+        no_judge_count=$(grep -c ':no-judge$' "$results_dir/gt-types.txt" || echo 0)
+    fi
+
     # Iterate over accuracy score files (one per pair)
     for scores_file in "$results_dir"/*--*--scores-accuracy.md; do
         [[ -f "$scores_file" ]] || continue
@@ -594,6 +634,16 @@ HEADER
     echo "**Extraction:** $markers_count marker-based, $fallback_count fallback (skipped judging), $failed_count failed" >> "$summary_file"
     echo "_⚠️ = Quality ≥ 20 but Coverage ≤ 2 — skill produced polished output that missed most findings_" >> "$summary_file"
     echo "" >> "$summary_file"
+
+    if [[ $pair_count -eq 0 && $no_judge_count -gt 0 ]]; then
+        echo "**Note:** Judge prompt not available — judging was skipped for all $no_judge_count pair(s). Skill outputs are in this directory for manual review. The maintainer runs authoritative scoring during PR review." >> "$summary_file"
+        echo "" >> "$summary_file"
+        echo "**Skill outputs:**" >> "$summary_file"
+        for output_file in "$results_dir"/*--*--output.md; do
+            [[ -f "$output_file" ]] && echo "- $(basename "$output_file")" >> "$summary_file"
+        done
+        echo "" >> "$summary_file"
+    fi
 
     # Cost summary from transcripts
     echo "## Cost" >> "$summary_file"
@@ -688,8 +738,7 @@ run_dry_run() {
     if [[ -f "$JUDGE_PROMPT" ]]; then
         echo "Judge prompt: OK ($JUDGE_PROMPT)"
     else
-        echo "Judge prompt: MISSING"
-        errors=$((errors + 1))
+        echo "Judge prompt: NOT FOUND — judging will be skipped (maintainer runs authoritative scoring)"
     fi
     echo ""
 
@@ -786,10 +835,15 @@ main() {
             run_skill "$skill" "$target" "$results_dir" || skill_exit=$?
 
             case $skill_exit in
-                0)  # Success — markers found, run judges
-                    run_judge_accuracy "$skill" "$target" "$results_dir" || true
-                    run_judge_quality "$skill" "$target" "$results_dir" || true
-                    echo "${skill}--${target}:${GT_RESOLVED_TYPE}" >> "$results_dir/gt-types.txt"
+                0)  # Success — markers found
+                    if [[ "$JUDGE_AVAILABLE" == true ]]; then
+                        run_judge_accuracy "$skill" "$target" "$results_dir" || true
+                        run_judge_quality "$skill" "$target" "$results_dir" || true
+                        echo "${skill}--${target}:${GT_RESOLVED_TYPE}" >> "$results_dir/gt-types.txt"
+                    else
+                        echo "  Judging skipped (judge-prompt.md not available)"
+                        echo "${skill}--${target}:no-judge" >> "$results_dir/gt-types.txt"
+                    fi
                     ;;
                 2)  # Extraction fallback — skill ran but markers missing
                     echo "  EXTRACTION FALLBACK — skipping judges"
