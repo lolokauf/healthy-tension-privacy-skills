@@ -9,3 +9,9 @@ eval/results
 # Ground truth files — maintained privately by the maintainer
 # Rubrics, scripts, targets.yaml, and notes.md ARE tracked
 eval/targets/*/ground-truth-*.md
+
+# Adversarial cases and judge rubric — maintained privately by the maintainer
+# Prevents contributors from gaming adversarial tests or optimizing for scoring metrics
+eval/adversarial-cases.md
+eval/judge-prompt.md
+eval/run-adversarial.sh

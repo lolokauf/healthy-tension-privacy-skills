@@ -26,7 +26,10 @@ A collection of reusable, tested privacy skills that guide AI coding agents thro
 | [Data Mapping](skills/data-mapping/) | Map and inventory all personal data in a codebase. Identifies collection points, storage, flows, sharing, and retention. Produces a structured data inventory consumable by other skills. | engineer, privacy-pm, dpo | GDPR Art. 30, CCPA §1798.100(b) | 1.2.0 | Stable |
 | [Consent Flow Reviewer](skills/consent-flow-review/) | Audit consent mechanisms for validity, enforcement, dark patterns, and withdrawal. Produces enforcement maps, dark pattern findings, and withdrawal traces. | engineer, privacy-pm, dpo | GDPR Art. 7, ePrivacy Art. 5(3), CCPA opt-out, LGPD Art. 8 | 1.0.0 | Stable |
 | [DPIA Generator](skills/dpia-generator/) | Generate draft Data Protection Impact Assessments from code. Evaluates triggers per WP29 9-criteria, maps processing activities, assesses risks, recommends mitigations. | privacy-pm, dpo, engineer | GDPR Art. 35–36, LGPD Art. 38 | 1.0.0 | Stable |
+| [Cookie & Tracker Audit](skills/cookie-tracker-audit/) | Audit cookies, tracking pixels, fingerprinting scripts, web storage, and beacon endpoints. Produces a tracker inventory with consent category classification, pre-consent violation findings, and remediation steps. | engineer, privacy-pm, dpo | ePrivacy Art. 5(3), GDPR, CNIL, ICO, CCPA | 1.0.0 | Stable |
 | [CCPA/CPRA Review](skills/ccpa-review/) | Assess CCPA/CPRA compliance: PI classification by 11 statutory categories, sale/sharing analysis, consumer rights audit, vendor classification, and opt-out mechanisms. | engineer, privacy-pm, dpo | CCPA/CPRA, CPPA regulations | 1.0.0 | Stable |
+| [LGPD Review](skills/lgpd-review/) | Assess LGPD compliance: 10 legal bases, sensitive data handling (Art. 11), data subject rights (Art. 18), international transfers (Art. 33-36), DPO governance, and automated decision review (Art. 20). | engineer, privacy-pm, dpo | LGPD Lei No. 13.709/2018, ANPD regulations | 1.0.0 | Stable |
+| [Privacy Notice Generator](skills/privacy-notice-generator/) | Generate draft privacy notices from code analysis. Maps data collection, processing, sharing, and rights to structured notice sections covering GDPR Art. 13/14, CCPA §1798.100(a), and LGPD Art. 9. Consumes Data Mapping output for higher accuracy. | privacy-pm, dpo, engineer | GDPR Art. 13–14, CCPA §1798.100(a), LGPD Art. 9, ePrivacy Art. 5(3) | 1.0.0 | Stable |
 
 ## Quick Start
 
@@ -72,7 +75,7 @@ for skill in healthy-tension-privacy-skills/skills/*/; do
 done
 ```
 
-Skills are invoked as `/pbd-code-review`, `/data-mapping`, `/ccpa-review`, etc. from any project.
+Skills are invoked as `/pbd-code-review`, `/data-mapping`, `/ccpa-review`, `/lgpd-review`, etc. from any project.
 
 ### Single skill globally
 

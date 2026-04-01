@@ -8,6 +8,76 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Individual skill
 
 ## [Unreleased]
 
+## 2026-04-01 — Eval Access Control Hardening
+
+### Changed
+
+**Eval suite — maintainer-private files**
+- Moved `eval/adversarial-cases.md`, `eval/judge-prompt.md`, and `eval/run-adversarial.sh` to maintainer-private (gitignored, not in public repo). Prevents contributors from gaming adversarial tests or optimizing for scoring metrics.
+- `eval/run-eval.sh` now gates judging on `judge-prompt.md` presence — contributors can run skills and review output without the judge. Summary reports list output files when judging is skipped.
+- Updated `eval/README.md` contributor instructions to reflect maintainer-only adversarial testing.
+
+---
+
+## 2026-03-31 — Privacy Notice Generator Skill
+
+### Added
+
+**Privacy Notice Generator skill v1.0.0 (7 files)**
+- `skills/privacy-notice-generator/SKILL.md` — 7-step process. Composable input: auto-detects `data_inventory.yaml`/`data_inventory.md` for higher-accuracy notice generation, or works standalone via direct code scan. Code-to-notice mapping: translates collection points, processing logic, third-party SDKs, retention mechanisms, rights endpoints, and cookies/trackers into structured notice language. Multi-jurisdictional compliance mapping: GDPR Art. 13/14, CCPA §1798.100(a), LGPD Art. 9, ePrivacy Art. 5(3). Legal basis identification with mandatory [TODO: Legal review required] placeholders. Children's data section (COPPA/GDPR Art. 8/LGPD Art. 14). Adversarial resistance (scope-reduction refusal, behaviour-over-labels, comprehensiveness enforcement). Draft disclaimer on all output.
+- `skills/privacy-notice-generator/checklists/notice-section-requirements.md` — Mandatory disclosure items per jurisdiction: GDPR Art. 13 (13 items), GDPR Art. 14 (2 additional items), CCPA §1798.100(a) (10 items), LGPD Art. 9 (10 items), ePrivacy Art. 5(3) (6 items). Cross-jurisdiction comparison table. Decision tree for which sections to generate.
+- `skills/privacy-notice-generator/checklists/code-to-notice-mapping.md` — Code pattern to notice section mapping rules across 9 categories: collection points, processing logic, third-party SDKs, database/storage, rights endpoints, cookies/tracking, automated decisions, international transfers, children's data. 60+ code patterns with notice language, confidence levels, and priority rules.
+- `skills/privacy-notice-generator/templates/privacy-notice-template.md` — 10-section notice template with inline guidance comments, compliance mapping table, TODO summary, completeness assessment. Mirrors Output Format with per-field instructions.
+- `skills/privacy-notice-generator/examples/document-signing-example.md` — Document signing platform (Documenso-style) with Next.js, Prisma, Stripe, PostHog, Resend, S3. Demonstrates composable mode (data inventory available), 18 data elements, 12 TODO items, CRITICAL findings (no account deletion, no data export), signature data disclosure.
+- `skills/privacy-notice-generator/examples/saas-boilerplate-example.md` — SaaS boilerplate (Open SaaS-style) with Wasp, OpenAI, Stripe, Plausible, Sentry, S3. Demonstrates standalone mode (no data inventory), 22 data elements, 13 TODO items, CRITICAL findings (no hard delete, AI prompts persist indefinitely), recommendation to run data-mapping first.
+
+**Evaluation ground truth (3 files)**
+- `eval-holdout/targets/documenso/ground-truth-privacy-notice-generator.md` — 12 must-find items
+- `eval-holdout/targets/open-saas/ground-truth-privacy-notice-generator.md` — 12 must-find items
+- `eval-holdout/targets/vataxia/ground-truth-privacy-notice-generator.md` — 12 must-find items
+
+---
+
+## 2026-03-30 — Cookie & Tracker Audit Skill
+
+### Added
+
+**Cookie & Tracker Audit skill v1.0.0 (7 files)**
+- `skills/cookie-tracker-audit/SKILL.md` — 7-step process. Cookie inventory (first-party/third-party, expiry, attributes, consent category). Third-party script detection (SDK imports, CDN scripts, tag manager tags). Pixel & beacon identification (Meta Pixel, GA4, Segment, sendBeacon). Fingerprinting detection (canvas, WebGL, AudioContext, navigator harvesting). Server-side tracking assessment (CAPI, server-set cookies, consent bypass). Pre-consent & consent enforcement audit with per-tracker gap analysis. GPC/DNT signal handling verification. Consent category classification per ePrivacy/CNIL/ICO (strictly necessary, functional, analytics, advertising). Adversarial resistance (scope-reduction refusal, behaviour-over-labels, absence-is-a-finding). Cross-skill composability with Consent Flow Reviewer.
+- `skills/cookie-tracker-audit/checklists/tracker-fingerprints.md` — Known tracker patterns for 20+ vendors across 6 categories: analytics (GA4, Plausible, Mixpanel, PostHog, Amplitude), advertising (Meta Pixel, Google Ads, LinkedIn, TikTok, Pinterest), session replay (HotJar, FullStory, Microsoft Clarity), CDPs (Segment, Rudderstack), tag managers (GTM), CMPs (OneTrust, Cookiebot). Cookie names, script URLs, npm packages, code patterns, and server-side endpoints per vendor. Fingerprinting API reference (13 techniques with code patterns). Known fingerprinting libraries (FingerprintJS, ClientJS).
+- `skills/cookie-tracker-audit/checklists/consent-categories.md` — Four-category consent model (strictly necessary, functional, analytics, advertising) with classification decision tree, per-category examples, red flags for false "strictly necessary" claims, dual-category tracker handling, data-mapping taxonomy mapping, edge cases (error tracking, reCAPTCHA, CDPs with advertising destinations).
+- `skills/cookie-tracker-audit/checklists/cookie-compliance.md` — ePrivacy Art. 5(3) core requirements (prior consent, informed consent, strictly necessary exemption). GDPR Art. 6/7 consent validity (freely given, specific, informed, unambiguous, withdrawal symmetry). CNIL guidelines (refuse-as-prominent-as-accept, 13-month maximum, no cookie walls, no continue-browsing consent). ICO guidance (analytics requires consent, 12-month maximum). CCPA cookie requirements (opt-out for sale/sharing, GPC §7025). Cookie attribute security checklist (HttpOnly, Secure, SameSite). Pre-consent audit checklist. Consent withdrawal checklist.
+- `skills/cookie-tracker-audit/templates/cookie-tracker-report.md` — 7-section report template mirroring Output Format with inline guidance comments. Cookie inventory, third-party script inventory, pixel & beacon inventory, fingerprinting & web storage, server-side tracking, consent enforcement matrix with strictly necessary justifications, recommended fixes.
+- `skills/cookie-tracker-audit/examples/ecommerce-tracker-example.md` — Next.js fashion retailer with GA4 + Meta Pixel + Google Ads + HotJar + Segment + LinkedIn + Meta CAPI + reCAPTCHA. Demonstrates: CMP present but scripts load before CMP initialises (decorative consent), server-side CAPI bypassing client consent, HotJar in document head, Segment as hidden advertising pipeline, 2-year GA cookie exceeding CNIL maximum, 14 cookies total, 5 consent enforcement gaps, 3 pre-consent violations.
+- `skills/cookie-tracker-audit/examples/saas-minimal-tracking-example.md` — React + Express SaaS with Plausible (cookieless) + Sentry + PostHog (feature flags). Demonstrates: privacy-conscious applications still have findings, cookieless analytics is not consent-free, Sentry with user context crosses analytics line, PostHog added without privacy review (tracker drift), rate limiter IP processing as transparency requirement, 3 cookies, 2 consent gaps.
+
+**Evaluation ground truth (3 files)**
+- `eval-holdout/targets/django-oscar/ground-truth-cookie-tracker-audit.md` — 12 must-find items
+- `eval-holdout/targets/open-saas/ground-truth-cookie-tracker-audit.md` — 12 must-find items
+- `eval-holdout/targets/discourse/ground-truth-cookie-tracker-audit.md` — 12 must-find items
+
+---
+
+## 2026-03-29 — LGPD Compliance Review Skill
+
+### Added
+
+**LGPD Review skill v1.0.0 (7 files)**
+- `skills/lgpd-review/SKILL.md` — 8-step process. 10 legal bases (Art. 7) with sensitive data restrictions (Art. 11 — legitimate interest excluded). Mandatory legitimate interest assessment (Art. 10) flagging. 9 data subject rights (Art. 18) + automated decision review (Art. 20). International transfer assessment (Art. 33-36) with ANPD adequacy tracking. DPO/governance audit (Art. 41, Art. 48). GDPR comparison table for developers familiar with EU regulation. LGPD-native terminology with English equivalents.
+- `skills/lgpd-review/checklists/lgpd-data-categories.md` — 12 functional categories for general personal data, 9 sensitive data types (Art. 5(II)), 9 Brazilian-specific data elements (CPF, CNPJ, RG, CNH, CTPS, PIS/PASEP, CEP, Pix key, SUS card), data-mapping taxonomy mapping, children's data note (Art. 14)
+- `skills/lgpd-review/checklists/lgpd-legal-bases.md` — 10 Art. 7 bases with code patterns and documentation requirements, 8 Art. 11 bases for sensitive data, legitimate interest balancing assessment requirements (Art. 10) with red flags, consent requirements summary (Art. 8), legal basis selection decision tree
+- `skills/lgpd-review/checklists/lgpd-rights-implementation.md` — 9 Art. 18 rights + Art. 20 automated decisions with per-right audit tables, Art. 16 retention exceptions, response timeline summary, identity verification guidance
+- `skills/lgpd-review/examples/fintech-brazil-example.md` — Brazilian fintech with Pix, KYC biometrics, ML credit scoring, Serasa integration. Demonstrates: Art. 11(II)(g) for biometric KYC, automated decision gap (Art. 20), US backup as international transfer of sensitive data, mandatory DPO for fintech
+- `skills/lgpd-review/examples/saas-international-example.md` — US-based SaaS serving Brazilian users. Demonstrates: LGPD extraterritorial reach, GDPR consent ≠ LGPD consent, GA4 as joint controller, all-data-in-US transfer problem, Portuguese privacy notice requirement
+- `skills/lgpd-review/templates/lgpd-compliance-report.md` — 7 sections mirroring Output Format with inline guidance, DPO/governance subsections for encarregado designation, breach notification, records of processing, privacy notice (Art. 9)
+
+**Evaluation ground truth (3 files)**
+- `eval-holdout/targets/clinic-mgmt/ground-truth-lgpd-review.md` — 12 must-find items
+- `eval-holdout/targets/django-oscar/ground-truth-lgpd-review.md` — 12 must-find items
+- `eval-holdout/targets/open-saas/ground-truth-lgpd-review.md` — 12 must-find items
+
+---
+
 ## 2026-03-22 — Phase 2: Skills Expansion + Eval Suite + Adversarial Hardening
 
 ### Added
@@ -38,13 +108,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Individual skill
 
 **Evaluation suite (8 files)**
 - `eval/run-eval.sh` — accuracy + quality eval runner with target cloning, ground truth auto-generation, LLM judge scoring
-- `eval/run-adversarial.sh` — adversarial resistance testing (5 cases: skip, downplay, override, scope-reduction, false-compliance)
-- `eval/judge-prompt.md` — LLM judge with forced D1 counting, verdict hard gates, sum/max quality format
-- `eval/auditor-prompt.md` — adversarial resistance auditor prompt
+- `eval/run-adversarial.sh` — adversarial resistance testing (moved to maintainer-private, see 2026-04-01 entry)
+- `eval/judge-prompt.md` — LLM judge rubric (moved to maintainer-private, see 2026-04-01 entry)
+- `eval/auditor-prompt.md` — ground truth auto-generation auditor prompt
 - `eval/generate-ground-truth.sh` — auto-generates ground truth from skill output
 - `eval/extract-output.sh` — extraction pipeline with exit codes
 - `eval/clone-targets.sh` — OSS target repo cloning with commit pinning
-- `eval/adversarial-cases.md` — 5 adversarial case definitions with expected behaviours
+- `eval/adversarial-cases.md` — adversarial case definitions (moved to maintainer-private, see 2026-04-01 entry)
 
 **Claude Code skill distribution**
 - `.claude-plugin/plugin.json` — plugin manifest (retained for future plugin system compatibility)
